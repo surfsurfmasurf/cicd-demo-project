@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Particle Animation - CI/CD Demo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        body {
+            background: #000;
+        }
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 100;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        #controls h3 {
+            margin-bottom: 10px;
+            color: #0ff;
+        }
+        #controls div {
+            margin: 5px 0;
+        }
+        #modeInfo {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <h3>🎮 Interactive Controls</h3>
+        <div><strong>Mouse:</strong> Move to attract particles</div>
+        <div><strong>Click:</strong> Create explosion</div>
+        <div><strong>M:</strong> Change drawing mode</div>
+        <div><strong>C:</strong> Change colors</div>
+        <div><strong>R:</strong> Reset particles</div>
+        <div><strong>+/-:</strong> Change particle count</div>
+        <div><strong>T:</strong> Toggle trails</div>
+    </div>
+    <div id="modeInfo">Mode: Floating Behavior</div>
+
+    <script>
+        let particles = [];
+        let mode = 0; // 0: floating, 1: spiral, 2: fireworks, 3: wave
+        let colorScheme = 0;
+        let showTrails = false;
+        const modes = ['Floating Behavior', 'Spiral Dance', 'Fireworks', 'Wave Pattern'];
+        
+        class Particle {
+            constructor(x, y, isExplosion = false) {
+                this.pos = createVector(x || random(width), y || random(height));
+                this.vel = isExplosion 
+                    ? p5.Vector.random2D().mult(random(5, 15))
+                    : createVector(random(-1, 1), random(-1, 1));
+                this.acc = createVector(0, 0);
+                this.size = random(3, 8);
+                this.color = this.getColor();
+                this.alpha = 255;
+                this.lifespan = isExplosion ? 100 : 255;
+                this.isExplosion = isExplosion;
+                this.angle = random(TWO_PI);
+                this.angleVel = random(-0.1, 0.1);
+            }
+            
+            getColor() {
+                const schemes = [
+                    [color(255, 0, 255), color(0, 255, 255), color(255, 255, 0), color(0, 255, 0)],
+                    [color(255, 100, 100), color(100, 100, 255), color(100, 255, 100), color(255, 255, 100)],
+                    [color(255, 0, 128), color(128, 0, 255), color(0, 128, 255), color(255, 128, 0)],
+                    [color(255, 200, 0), color(255, 0, 200), color(0, 255, 200), color(200, 255, 0)]
+                ];
+                return random(schemes[colorScheme]);
+            }
+            
+            applyForce(force) {
+                this.acc.add(force);
+            }
+            
+            update() {
+                // Mode-specific behaviors
+                switch(mode) {
+                    case 0: // Floating
+                        this.floatingBehavior();
+                        break;
+                    case 1: // Spiral
+                        this.spiralBehavior();
+                        break;
+                    case 2: // Fireworks
+                        this.fireworksBehavior();
+                        break;
+                    case 3: // Wave
+                        this.waveBehavior();
+                        break;
+                }
+                
+                this.vel.add(this.acc);
+                this.vel.limit(8);
+                this.pos.add(this.vel);
+                this.acc.mult(0);
+                this.angle += this.angleVel;
+                
+                if (this.isExplosion) {
+                    this.lifespan -= 2;
+                    this.vel.mult(0.95);
+                }
+                
+                // Wrap around edges
+                if (this.pos.x < 0) this.pos.x = width;
+                if (this.pos.x > width) this.pos.x = 0;
+                if (this.pos.y < 0) this.pos.y = height;
+                if (this.pos.y > height) this.pos.y = 0;
+            }
+            
+            floatingBehavior() {
+                // Attraction to mouse
+                let mouse = createVector(mouseX, mouseY);
+                let force = p5.Vector.sub(mouse, this.pos);
+                let distance = force.mag();
+                distance = constrain(distance, 5, 200);
+                force.normalize();
+                let strength = (200 / distance) * 0.3;
+                force.mult(strength);
+                this.applyForce(force);
+                
+                // Random drift
+                this.applyForce(p5.Vector.random2D().mult(0.1));
+            }
+            
+            spiralBehavior() {
+                let center = createVector(width / 2, height / 2);
+                let toCenter = p5.Vector.sub(center, this.pos);
+                let distance = toCenter.mag();
+                
+                // Spiral force
+                let angle = atan2(toCenter.y, toCenter.x);
+                let spiralForce = createVector(cos(angle + HALF_PI), sin(angle + HALF_PI));
+                spiralForce.mult(2);
+                this.applyForce(spiralForce);
+                
+                // Center attraction
+                toCenter.normalize();
+                toCenter.mult(0.5);
+                this.applyForce(toCenter);
+            }
+            
+            fireworksBehavior() {
+                this.applyForce(createVector(0, 0.1)); // Gravity
+                
+                if (random(1) < 0.01) {
+                    this.applyForce(p5.Vector.random2D().mult(3));
+                }
+            }
+            
+            waveBehavior() {
+                let wave = sin(this.pos.x * 0.01 + frameCount * 0.05) * 2;
+                this.applyForce(createVector(0, wave));
+                this.applyForce(createVector(1, 0));
+            }
+            
+            display() {
+                let c = this.color;
+                c.setAlpha(this.lifespan);
+                
+                push();
+                translate(this.pos.x, this.pos.y);
+                rotate(this.angle);
+                
+                // Glow effect
+                drawingContext.shadowBlur = 20;
+                drawingContext.shadowColor = c;
+                
+                fill(c);
+                noStroke();
+                
+                // Different shapes based on mode
+                if (mode === 1) {
+                    ellipse(0, 0, this.size * 2, this.size * 0.5);
+                } else if (mode === 2) {
+                    star(0, 0, this.size, this.size * 2, 5);
+                } else {
+                    ellipse(0, 0, this.size);
+                }
+                
+                pop();
+            }
+            
+            isDead() {
+                return this.lifespan < 0;
+            }
+        }
+        
+        function star(x, y, radius1, radius2, npoints) {
+            let angle = TWO_PI / npoints;
+            let halfAngle = angle / 2.0;
+            beginShape();
+            for (let a = 0; a < TWO_PI; a += angle) {
+                let sx = x + cos(a) * radius2;
+                let sy = y + sin(a) * radius2;
+                vertex(sx, sy);
+                sx = x + cos(a + halfAngle) * radius1;
+                sy = y + sin(a + halfAngle) * radius1;
+                vertex(sx, sy);
+            }
+            endShape(CLOSE);
+        }
+        
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            
+            // Initialize particles
+            for (let i = 0; i < 200; i++) {
+                particles.push(new Particle());
+            }
+        }
+        
+        function draw() {
+            // Trail effect
+            if (showTrails) {
+                fill(0, 20);
+            } else {
+                fill(0, 50);
+            }
+            rect(0, 0, width, height);
+            
+            // Update and display particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].display();
+                
+                if (particles[i].isDead()) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            // Maintain particle count
+            while (particles.length < 200) {
+                particles.push(new Particle());
+            }
+        }
+        
+        function mousePressed() {
+            // Create explosion
+            for (let i = 0; i < 50; i++) {
+                particles.push(new Particle(mouseX, mouseY, true));
+            }
+        }
+        
+        function keyPressed() {
+            if (key === 'm' || key === 'M') {
+                mode = (mode + 1) % modes.length;
+                document.getElementById('modeInfo').textContent = 'Mode: ' + modes[mode];
+            }
+            
+            if (key === 'c' || key === 'C') {
+                colorScheme = (colorScheme + 1) % 4;
+                particles.forEach(p => p.color = p.getColor());
+            }
+            
+            if (key === 'r' || key === 'R') {
+                particles = [];
+                for (let i = 0; i < 200; i++) {
+                    particles.push(new Particle());
+                }
+            }
+            
+            if (key === '+' || key === '=') {
+                for (let i = 0; i < 20; i++) {
+                    particles.push(new Particle());
+                }
+            }
+            
+            if (key === '-' || key === '_') {
+                particles.splice(0, 20);
+            }
+            
+            if (key === 't' || key === 'T') {
+                showTrails = !showTrails;
+            }
+        }
+        
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+    </script>
+</body>
+</html>
