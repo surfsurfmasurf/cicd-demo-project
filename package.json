@@ -1,0 +1,22 @@
+{
+  "name": "cicd-demo-project",
+  "version": "1.0.0",
+  "description": "CI/CD 파이프라인 데모 프로젝트",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "jest --coverage",
+    "dev": "nodemon app.js"
+  },
+  "keywords": ["cicd", "demo", "github-actions"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "supertest": "^6.3.3",
+    "nodemon": "^2.0.22"
+  }
+}
