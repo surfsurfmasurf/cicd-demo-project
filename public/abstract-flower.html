@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abstract Flower - p5.js Work</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background: #090909; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        #canvas-container { margin-top: 50px; box-shadow: 0 0 20px rgba(255,255,255,0.1); }
+        .content { max-width: 800px; width: 90%; margin: 20px 0; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 10px; }
+        pre { background: #1a1a1a; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 14px; border-left: 4px solid #0ff; }
+        h1 { color: #0ff; }
+        .back-link { margin-top: 20px; color: #aaa; text-decoration: none; transition: color 0.3s; }
+        .back-link:hover { color: #fff; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div class="content">
+        <h1>Abstract Flower</h1>
+        <p>이 작품은 수학적 함수를 이용해 생성된 추상적인 꽃 모양의 애니메이션입니다. <code>sin</code>, <code>cos</code>, <code>mag</code> 함수를 복합적으로 사용하여 유기적인 움직임을 만들어냅니다.</p>
+        
+        <h3>Code</h3>
+        <pre>
+let t = 0;
+
+function setup() {
+  let canvas = createCanvas(400, 400);
+  canvas.parent('canvas-container');
+}
+
+function draw() {
+  background(9);
+  stroke(400, 116);
+  t += PI / 90;
+  for (let i = 10000; i--; ) {
+    let y = i / 790;
+    let k = (y < 8 ? 9 + sin(y ^ 9) * 6 : 4 + cos(y)) * cos(i + t / 4);
+    let e = y / 3 - 13;
+    let d = mag(k, e) + cos(e + t * 2 + (i % 2) * 4);
+    let q = (y * k / 5) * (2 + sin(d * 2 + y - t * 4)) + 80;
+    let c = d / 4 - t / 2 + (i % 2) * 3;
+    point(q * cos(c) + 200, q * sin(c) + d * 9 + 60);
+  }
+}
+        </pre>
+        
+        <h3>Original "Dweet" Code</h3>
+        <pre>a=(y=i/790,d=mag(k=(y&lt;8?9+sin(y^9)*6:4+cos(y))*cos(i+t/4),e=y/3-13)+cos(e+t*2+i%2*4))=&gt;point((q=y*k/5*(2+sin(d*2+y-t*4))+80)*cos(c=d/4-t/2+i%2*3)+200,q*sin(c)+d*9+60)
+t=0,draw=$=&gt;{t||createCanvas(w=400,w);background(9).stroke(w,116);for(t+=PI/90,i=1e4;i--;)a()}</pre>
+    </div>
+
+    <a href="/" class="back-link">← Gallery 로 돌아가기</a>
+
+    <script>
+        let t = 0;
+
+        function setup() {
+            let canvas = createCanvas(400, 400);
+            canvas.parent('canvas-container');
+        }
+
+        function draw() {
+            background(9);
+            stroke(400, 116);
+            t += PI / 90;
+            for (let i = 10000; i--; ) {
+                let y = i / 790;
+                let k = (y < 8 ? 9 + sin(y ^ 9) * 6 : 4 + cos(y)) * cos(i + t / 4);
+                let e = y / 3 - 13;
+                let d = mag(k, e) + cos(e + t * 2 + (i % 2) * 4);
+                let q = (y * k / 5) * (2 + sin(d * 2 + y - t * 4)) + 80;
+                let c = d / 4 - t / 2 + (i % 2) * 3;
+                point(q * cos(c) + 200, q * sin(c) + d * 9 + 60);
+            }
+        }
+    </script>
+</body>
+</html>

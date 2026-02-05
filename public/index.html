@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>p5.js Art Gallery - CI/CD Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            background: #0f172a;
+            color: white;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 60px; }
+        h1 { font-size: 3rem; margin-bottom: 10px; background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p.subtitle { color: #94a3b8; font-size: 1.2rem; }
+        
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+        }
+        
+        .card {
+            background: #1e293b;
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid #334155;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .card:hover {
+            transform: translateY(-10px);
+            border-color: #38bdf8;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .card-preview {
+            height: 200px;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+        }
+        
+        .card-content { padding: 20px; }
+        .card-title { font-size: 1.5rem; margin-bottom: 10px; color: #f8fafc; }
+        .card-desc { color: #94a3b8; font-size: 0.95rem; line-height: 1.5; }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 15px;
+            background: #334155;
+            color: #38bdf8;
+        }
+
+        .footer {
+            margin-top: 80px;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>p5.js Art Gallery</h1>
+            <p class="subtitle">CI/CD 파이프라인으로 자동 배포되는 생성 예술 컬렉션</p>
+        </header>
+
+        <div class="gallery">
+            <a href="/abstract-flower.html" class="card">
+                <div class="card-preview" style="background: radial-gradient(circle, #2dd4bf, #0f172a);">🌸</div>
+                <div class="card-content">
+                    <h3 class="card-title">Abstract Flower</h3>
+                    <p class="card-desc">수학적 함수를 이용해 피어나는 추상적인 꽃의 움직임을 표현했습니다.</p>
+                    <span class="badge">Math Art</span>
+                </div>
+            </a>
+
+            <a href="/animation.html" class="card">
+                <div class="card-preview" style="background: radial-gradient(circle, #fb7185, #0f172a);">✨</div>
+                <div class="card-content">
+                    <h3 class="card-title">Particle Interaction</h3>
+                    <p class="card-desc">마우스 움직임에 반응하는 화려한 파티클 시스템입니다. 클릭으로 폭발을 일으켜보세요.</p>
+                    <span class="badge">Interactive</span>
+                </div>
+            </a>
+        </div>
+
+        <footer class="footer">
+            <p>© 2026 놀란봇노예. Built with p5.js & GitHub Actions.</p>
+        </footer>
+    </div>
+</body>
+</html>
