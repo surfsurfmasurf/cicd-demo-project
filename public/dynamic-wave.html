@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Wave Pattern - p5.js Work</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background: #050505; color: white; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        #canvas-container { margin-top: 30px; box-shadow: 0 0 30px rgba(255,255,255,0.05); border-radius: 8px; overflow: hidden; }
+        .content { max-width: 800px; width: 90%; margin: 20px 0; padding: 30px; background: rgba(255,255,255,0.03); border-radius: 15px; backdrop-filter: blur(10px); }
+        pre { background: #1a1a1a; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 14px; border-left: 4px solid #f472b6; color: #f8fafc; }
+        h1 { color: #f472b6; margin-bottom: 10px; }
+        .back-link { margin: 20px 0 40px; color: #94a3b8; text-decoration: none; transition: color 0.3s; }
+        .back-link:hover { color: #fff; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; padding: 20px; background: rgba(0,0,0,0.2); border-radius: 10px; }
+        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-size: 0.9rem; color: #cbd5e1; }
+        input[type="range"] { width: 100%; }
+        .description { line-height: 1.6; color: #94a3b8; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div class="content">
+        <h1>Dynamic Wave Pattern</h1>
+        <p class="description">이 작품은 삼각함수(sin, cos, tan)의 중첩을 통해 복잡하고 유기적인 파동 패턴을 생성합니다. 대칭 구조와 주기적인 움직임을 통해 마치 살아있는 세포나 파동의 간섭 현상을 시각화한 것과 같은 효과를 줍니다.</p>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Speed (속도)</label>
+                <input type="range" id="speed" min="0.1" max="5" step="0.1" value="1">
+            </div>
+            <div class="control-group">
+                <label>Color Shift (색상 변화)</label>
+                <input type="range" id="colorShift" min="0" max="360" step="1" value="180">
+            </div>
+            <div class="control-group">
+                <label>Complexity (복잡도)</label>
+                <input type="range" id="complexity" min="0.5" max="2" step="0.1" value="1">
+            </div>
+            <div class="control-group">
+                <label>Point Size (점 크기)</label>
+                <input type="range" id="size" min="1" max="10" step="0.5" value="3">
+            </div>
+        </div>
+
+        <h3 style="margin-top: 30px;">Code Analysis</h3>
+        <p class="description">중첩된 <code>for</code> 루프 내에서 <code>i</code>와 <code>j</code> 값을 활용해 <code>x</code>, <code>y</code> 좌표를 계산하며, <code>tan</code> 함수를 사용하여 극적인 화면 밖 확산 효과를 구현했습니다.</p>
+        <pre>
+let f = 0;
+function draw() {
+    background(PI/64); // 다크 블루 톤의 배경
+    let speed = document.getElementById('speed').value;
+    let hueBase = document.getElementById('colorShift').value;
+    
+    for(let j = -PI; j < TAU; j += PI/64) {
+        for(let i = 0; i <= PI; i += PI/64) {
+            let n = (f + cos(j + f)) % (PI/64);
+            let x = (i + n) * (400 / PI);
+            let y = (j + 2 * sin(f + cos(i + n))) * (400 / PI);
+            
+            // 색상 계산 (HSL)
+            let h = (hueBase + sin(f + i) * 60) % 360;
+            fill(h, 70, 70, 150);
+            
+            let X = 200 * sin(y / 200);
+            let Y = tan(x / 400) * 400;
+            let s = 3 * sin(i - j);
+            
+            circle(X, Y, s);
+            circle(400 - X, Y, s);
+        }
+    }
+    f += (PI/64) / 8 * speed;
+}
+        </pre>
+    </div>
+
+    <a href="/" class="back-link">← Gallery 로 돌아가기</a>
+
+    <script>
+        let f = 0;
+        let W = 400;
+        let P = Math.PI;
+        let B = P / 64;
+
+        function setup() {
+            let canvas = createCanvas(W, W);
+            canvas.parent('canvas-container');
+            colorMode(HSB, 360, 100, 100, 255);
+            noStroke();
+        }
+
+        function draw() {
+            background(B, 40); // 약간의 잔상 효과
+            
+            let speed = parseFloat(document.getElementById('speed').value);
+            let hueBase = parseFloat(document.getElementById('colorShift').value);
+            let comp = parseFloat(document.getElementById('complexity').value);
+            let baseSize = parseFloat(document.getElementById('size').value);
+            
+            let step = B / comp;
+
+            for(let j = -P; j < TAU; j += step) {
+                for(let i = 0; i <= P; i += step) {
+                    let n = (f + cos(j + f)) % B;
+                    let x = (i + n) * (W / P);
+                    let y = (j + 2 * sin(f + cos(i + n))) * (W / P);
+                    
+                    let X = 200 * sin(y / 200);
+                    let Y = tan(x / W) * W;
+                    let s = baseSize * sin(i - j);
+                    
+                    let h = (hueBase + dist(X, Y, W/2, W/2) / 2 + f * 50) % 360;
+                    fill(h, 80, 90, 150);
+                    
+                    circle(X, Y, s);
+                    circle(W - X, Y, s);
+                }
+            }
+            f += (B / 8) * speed;
+        }
+    </script>
+</body>
+</html>
