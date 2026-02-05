@@ -9,7 +9,7 @@
         body { margin: 0; padding: 0; background: #050505; color: white; font-family: 'Pretendard', sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         #canvas-container { margin-top: 30px; box-shadow: 0 0 30px rgba(255,255,255,0.05); border-radius: 8px; overflow: hidden; }
         .content { max-width: 800px; width: 90%; margin: 20px 0; padding: 30px; background: rgba(255,255,255,0.03); border-radius: 15px; backdrop-filter: blur(10px); }
-        pre { background: #1a1a1a; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 14px; border-left: 4px solid #f472b6; color: #f8fafc; }
+        pre { background: #1a1a1a; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 14px; border-left: 4px solid #f472b6; color: #f8fafc; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
         h1 { color: #f472b6; margin-bottom: 10px; }
         .back-link { margin: 20px 0 40px; color: #94a3b8; text-decoration: none; transition: color 0.3s; }
         .back-link:hover { color: #fff; }
@@ -82,12 +82,13 @@ function draw() {
 
     <script>
         let f = 0;
-        let W = 400;
+        let W = 800;
+        let H = 600;
         let P = Math.PI;
         let B = P / 64;
 
         function setup() {
-            let canvas = createCanvas(W, W);
+            let canvas = createCanvas(W, H);
             canvas.parent('canvas-container');
             colorMode(HSB, 360, 100, 100, 255);
             noStroke();
@@ -107,13 +108,13 @@ function draw() {
                 for(let i = 0; i <= P; i += step) {
                     let n = (f + cos(j + f)) % B;
                     let x = (i + n) * (W / P);
-                    let y = (j + 2 * sin(f + cos(i + n))) * (W / P);
+                    let y = (j + 2 * sin(f + cos(i + n))) * (H / P);
                     
-                    let X = 200 * sin(y / 200);
-                    let Y = tan(x / W) * W;
+                    let X = (W/2) * sin(y / 200) + (W/4);
+                    let Y = tan(x / W) * H;
                     let s = baseSize * sin(i - j);
                     
-                    let h = (hueBase + dist(X, Y, W/2, W/2) / 2 + f * 50) % 360;
+                    let h = (hueBase + dist(X, Y, W/2, H/2) / 2 + f * 50) % 360;
                     fill(h, 80, 90, 150);
                     
                     circle(X, Y, s);

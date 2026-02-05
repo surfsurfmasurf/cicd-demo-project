@@ -9,7 +9,7 @@
         body { margin: 0; padding: 0; background: #090909; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         #canvas-container { margin-top: 50px; box-shadow: 0 0 20px rgba(255,255,255,0.1); }
         .content { max-width: 800px; width: 90%; margin: 20px 0; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 10px; }
-        pre { background: #1a1a1a; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 14px; border-left: 4px solid #0ff; }
+        pre { background: #1a1a1a; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 14px; border-left: 4px solid #0ff; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
         h1 { color: #0ff; }
         .back-link { margin-top: 20px; color: #aaa; text-decoration: none; transition: color 0.3s; }
         .back-link:hover { color: #fff; }
@@ -58,7 +58,7 @@ t=0,draw=$=&gt;{t||createCanvas(w=400,w);background(9).stroke(w,116);for(t+=PI/9
         let t = 0;
 
         function setup() {
-            let canvas = createCanvas(400, 400);
+            let canvas = createCanvas(800, 600);
             canvas.parent('canvas-container');
         }
 
@@ -73,7 +73,7 @@ t=0,draw=$=&gt;{t||createCanvas(w=400,w);background(9).stroke(w,116);for(t+=PI/9
                 let d = mag(k, e) + cos(e + t * 2 + (i % 2) * 4);
                 let q = (y * k / 5) * (2 + sin(d * 2 + y - t * 4)) + 80;
                 let c = d / 4 - t / 2 + (i % 2) * 3;
-                point(q * cos(c) + 200, q * sin(c) + d * 9 + 60);
+                point(q * cos(c) + 400, q * sin(c) + d * 9 + 160);
             }
         }
     </script>
