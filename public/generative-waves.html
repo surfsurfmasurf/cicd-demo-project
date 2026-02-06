@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generative Waves - p5.js Art</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background: #090909; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        #canvas-container { margin-top: 50px; box-shadow: 0 0 20px rgba(255,255,255,0.1); }
+        .content { max-width: 800px; width: 90%; margin: 20px 0; padding: 20px; background: rgba(255,255,255,0.05); border-radius: 10px; }
+        pre { background: #1a1a1a; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 14px; border-left: 4px solid #0ff; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
+        h1 { color: #0ff; }
+        .back-link { margin-top: 20px; color: #aaa; text-decoration: none; transition: color 0.3s; }
+        .back-link:hover { color: #fff; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div class="content">
+        <h1>Generative Waves</h1>
+        <p>Short p5.js code generating complex wave interference patterns.</p>
+        
+        <h3>Source Code</h3>
+        <pre>
+t=0
+draw=_=>{r=random
+t||createCanvas(W=(w=200)*2,W)
+for(s=0;s&lt;W;s++)
+for(x=0,M=r(50),T=r(),O=r(W);x&lt;W;x++)
+stroke(s%w+(y=sin((x-s*4+T)/w*TAU)*M+O),W-s%W,W-y),
+point(x,y)
+t++}
+        </pre>
+    </div>
+
+    <a href="/" class="back-link">← Gallery 로 돌아가기</a>
+
+    <script>
+        let t = 0;
+        let w = 200;
+        let W = 400;
+
+        function setup() {
+            let c = createCanvas(W, W);
+            c.parent('canvas-container');
+            // Equivalent to t||createCanvas in the loop (run once)
+        }
+
+        function draw() {
+            let r = random;
+            // Outer loop 's' from 0 to W
+            for (let s = 0; s < W; s++) {
+                // Initialize M, T, O for this 's' iteration?
+                // The comma operator in for loop initialization runs once per loop start.
+                // for(x=0,M=r(50),T=r(),O=r(W); x<W; x++)
+                // Yes, M, T, O are constant for the inner x loop.
+                let M = r(50);
+                let T = r();
+                let O = r(W);
+
+                for (let x = 0; x < W; x++) {
+                    // stroke(s%w+(y=sin((x-s*4+T)/w*TAU)*M+O),W-s%W,W-y)
+                    // point(x,y)
+                    
+                    let y = sin((x - s * 4 + T) / w * TWO_PI) * M + O;
+                    
+                    // Code uses TAU, p5.js has TAU or TWO_PI
+                    // stroke color calculation
+                    let c1 = s % w + y;
+                    let c2 = W - s % W;
+                    let c3 = W - y;
+                    
+                    stroke(c1, c2, c3);
+                    point(x, y);
+                }
+            }
+            t++;
+        }
+    </script>
+</body>
+</html>
