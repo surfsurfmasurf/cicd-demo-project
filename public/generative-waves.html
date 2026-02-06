@@ -23,6 +23,9 @@
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid #334155;
+            /* Canvas size is 400px */
+            width: 400px;
+            height: 400px;
         }
         .content { 
             max-width: 900px; 
@@ -62,7 +65,7 @@
         pre { 
             margin: 0;
             font-family: 'Consolas', monospace; 
-            font-size: 15px; 
+            font-size: 14px; 
             color: #a5b4fc;
             line-height: 1.5;
         }
@@ -91,89 +94,126 @@
     
     <div class="content">
         <h1>Generative Waves</h1>
-        <p>무작위성과 삼각함수의 중첩이 만들어내는 디지털 노이즈 캔버스</p>
+        <p>짧은 코드로 생성되는 복잡한 파동 패턴을 이해하기 쉬운 p5.js 코드로 재구성했습니다.</p>
         
         <div class="explanation-grid">
             <div>
                 <h2>🎨 작품 해설</h2>
                 <p>
-                    이 작품은 <strong>Code Golf</strong>(코드를 최대한 짧게 줄이는 놀이) 스타일로 작성된 p5.js 스크립트입니다. 
-                    단 몇 줄의 코드로 복잡하고 유기적인 텍스처를 생성합니다.
+                    이 작품은 수많은 점(Point)들이 모여 거친 질감의 파도를 형성하는 생성 예술입니다.
+                    원본은 매우 짧은 "Code Golf" 형태였으나, 이를 이해하기 쉽게 일반적인 <strong>p5.js 구조</strong>로 풀어서 작성했습니다.
                 </p>
                 <p>
-                    수백 개의 사인(Sine) 파동을 화면에 중첩시키면서, 각 파동의 <span class="highlight">위상(Phase)</span>, <span class="highlight">진폭(Amplitude)</span>, <span class="highlight">색상(Color)</span>에 무작위성을 부여합니다. 
-                    이 과정이 매 프레임 반복되며, 마치 전파 방해를 받은 TV 화면이나 거친 직물 같은 독특한 질감을 만들어냅니다.
+                    화면 전체를 덮는 수많은 점들을 하나씩 찍어내며 그립니다.
+                    각 줄(Layer)마다 <span class="highlight">랜덤한 진폭(Amplitude)</span>과 <span class="highlight">위상(Phase)</span>을 부여하여,
+                    규칙적인 사인(Sine) 파동이 불규칙하게 겹쳐지도록 만듭니다. 
+                    이 불규칙한 중첩이 마치 노이즈가 낀 듯한 독특한 아날로그 감성을 자아냅니다.
                 </p>
             </div>
             <div>
-                <h2>⚙️ 작동 원리</h2>
+                <h2>⚙️ 코드 분석</h2>
                 <ul style="padding-left: 20px; line-height: 1.8; color: #cbd5e1;">
-                    <li><strong>이중 반복문 (Loops):</strong> <code>s</code>(레이어)와 <code>x</code>(가로 좌표)를 반복하며 화면을 점(Point)으로 채웁니다.</li>
-                    <li><strong>파동 계산 (Wave):</strong> <code>sin((x - s*4 + T)/w * TAU)</code> 공식을 통해 부드러운 곡선을 만들고, 랜덤 변수 <code>M</code>(진폭)과 <code>O</code>(높이)로 파형을 변형시킵니다.</li>
-                    <li><strong>색상 혼합 (Color):</strong> <code>stroke</code> 함수 안에서 좌표값과 파동의 높이를 색상 RGB 값으로 변환하여, 위치에 따라 자연스럽게 변하는 그라데이션을 형성합니다.</li>
+                    <li><strong>이중 for 반복문:</strong>
+                        <ul>
+                            <li>바깥 루프 (<code>layer</code>): 화면에 그릴 파동의 층(Layer)을 하나씩 생성합니다.</li>
+                            <li>안쪽 루프 (<code>x</code>): 화면의 왼쪽 끝부터 오른쪽 끝까지 점을 찍습니다.</li>
+                        </ul>
+                    </li>
+                    <li><strong>파동 계산 (Wave):</strong>
+                        <br><code>sin(angle) * amplitude + yOffset</code>
+                        <br>삼각함수를 이용해 물결 모양을 만들고, 랜덤 값으로 높낮이와 위치를 매번 다르게 변형합니다.
+                    </li>
+                    <li><strong>색상 (Color):</strong>
+                        <br>점의 위치(x, y)와 레이어 순서에 따라 R, G, B 값을 수학적으로 계산하여 색을 입힙니다.
+                    </li>
                 </ul>
             </div>
         </div>
         
-        <h2>💻 Source Code</h2>
+        <h2>💻 Readable Source Code</h2>
         <div class="code-block">
-            <pre>t=0
-draw=_=>{r=random
-t||createCanvas(W=(w=400)*2,W)
-for(s=0;s&lt;W;s++)
-for(x=0,M=r(50),T=r(),O=r(W);x&lt;W;x++)
-stroke(s%w+(y=sin((x-s*4+T)/w*TAU)*M+O),W-s%W,W-y),
-point(x,y)
-t++}</pre>
+            <pre>
+let t = 0;
+const canvasSize = 400; // 캔버스 전체 크기
+const waveScale = 200;  // 파동의 밀도 조절 변수
+
+function setup() {
+    let c = createCanvas(canvasSize, canvasSize);
+    c.parent('canvas-container');
+    background(0); // 초기 배경색 검정
+}
+
+function draw() {
+    // 매 프레임마다 그림을 겹쳐 그립니다.
+    
+    // 1. 레이어 루프: 0부터 400까지 반복하며 여러 층의 파동을 만듭니다.
+    for (let layer = 0; layer < canvasSize; layer++) {
+        
+        // 각 레이어마다 고유한 랜덤 속성을 부여합니다.
+        let amplitude = random(50);      // 파동의 높이 (진폭)
+        let phase = random();            // 파동의 시작 위치 (위상)
+        let yOffset = random(canvasSize); // 화면 상의 수직 위치
+
+        // 2. 가로(x) 루프: 화면 좌측부터 우측까지 점을 찍습니다.
+        for (let x = 0; x < canvasSize; x++) {
+            
+            // 파동의 각도 계산: (x 위치 - 레이어 보정 + 위상)
+            let angle = (x - layer * 4 + phase) / waveScale * TWO_PI;
+            
+            // 사인 함수로 y 좌표(높이) 계산
+            let y = sin(angle) * amplitude + yOffset;
+            
+            // 색상 계산 (Code Golf 원본의 수학적 로직 유지)
+            // 위치와 레이어 순서에 따라 색상이 자동 생성됩니다.
+            let r = (layer % waveScale) + y;
+            let g = canvasSize - (layer % canvasSize);
+            let b = canvasSize - y;
+            
+            stroke(r, g, b); // 선 색상 설정
+            point(x, y);     // 점 찍기
+        }
+    }
+    
+    t++; // 시간 변수 증가 (애니메이션이 필요할 경우 사용)
+}</pre>
         </div>
     </div>
 
     <a href="/" class="back-link">← 갤러리로 돌아가기</a>
 
     <script>
-        // 원본 코드를 시각적으로 더 잘 보이게 하기 위해 캔버스 크기를 800x800으로 조정했습니다.
-        // 골프 코드의 로직을 그대로 유지하되 변수 스케일만 조정했습니다.
+        // 위에서 설명한 "읽기 쉬운 코드"를 그대로 실행합니다.
         
         let t = 0;
-        let w = 400; // 원본 200 -> 400 (두 배 해상도)
-        let W = 800; // 원본 400 -> 800
+        const canvasSize = 400; // 캔버스 크기 400x400 복귀
+        const waveScale = 200;
 
         function setup() {
-            let c = createCanvas(W, W);
+            let c = createCanvas(canvasSize, canvasSize);
             c.parent('canvas-container');
-            pixelDensity(1); // 성능을 위해 픽셀 밀도 고정
+            background(0);
         }
 
         function draw() {
-            let r = random;
+            // 원본 Golf Code의 로직을 읽기 쉬운 변수명으로 풀어서 실행
             
-            // 한 프레임에 너무 많은 연산을 하면 느려질 수 있으므로, 
-            // 시각적 효과는 유지하되 성능을 최적화할 수 있습니다.
-            // 여기서는 원본 알고리즘을 충실히 따릅니다.
-            
-            for (let s = 0; s < W; s++) {
-                // 각 's' 라인(레이어)마다 랜덤 파라미터 생성
-                let M = r(50); // 진폭 (Amplitude)
-                let T = r();   // 위상 변이 (Phase Shift)
-                let O = r(W);  // 수직 오프셋 (Offset)
+            for (let layer = 0; layer < canvasSize; layer++) {
+                // Golf Code: M=r(50), T=r(), O=r(W)
+                let amplitude = random(50);
+                let phase = random();
+                let yOffset = random(canvasSize);
 
-                for (let x = 0; x < W; x++) {
-                    // 사인 파동 계산
-                    // x: 가로 위치
-                    // s: 레이어 깊이
-                    // T: 랜덤 위상
-                    let angle = (x - s * 4 + T) / w * TWO_PI;
-                    let y = sin(angle) * M + O;
+                for (let x = 0; x < canvasSize; x++) {
+                    // Golf Code: y=sin((x-s*4+T)/w*TAU)*M+O
+                    let angle = (x - layer * 4 + phase) / waveScale * TWO_PI;
+                    let y = sin(angle) * amplitude + yOffset;
                     
-                    // 색상 계산 (Code Golf 특유의 수학적 색상 생성)
-                    // R: s%w + y (레이어와 높이에 기반)
-                    // G: W - s%W (레이어 역순)
-                    // B: W - y (높이 역순)
-                    let rVal = (s % w) + y;
-                    let gVal = W - (s % W);
-                    let bVal = W - y;
+                    // Golf Code: stroke(s%w+y, W-s%W, W-y)
+                    let rVal = (layer % waveScale) + y;
+                    let gVal = canvasSize - (layer % canvasSize);
+                    let bVal = canvasSize - y;
                     
-                    stroke(rVal % 255, gVal % 255, bVal % 255);
+                    stroke(rVal, gVal, bVal);
                     point(x, y);
                 }
             }
