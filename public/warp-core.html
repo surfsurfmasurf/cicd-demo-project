@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warp Core - CI/CD Demo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+        #canvas-container { 
+            margin-top: 40px; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); 
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            width: 600px;
+            height: 600px;
+            background: #000;
+        }
+        .content { 
+            max-width: 900px; 
+            width: 90%; 
+            margin: 40px 0; 
+            padding: 30px; 
+            background: #1e293b; 
+            border-radius: 16px; 
+            border: 1px solid #334155;
+        }
+        h1 { color: #38bdf8; margin-bottom: 10px; font-size: 2rem; }
+        h2 { color: #94a3b8; font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+        p { line-height: 1.7; color: #cbd5e1; margin-bottom: 15px; }
+        .code-block { 
+            background: #0f172a; 
+            padding: 20px; 
+            border-radius: 8px; 
+            overflow-x: auto; 
+            border: 1px solid #334155;
+            position: relative;
+        }
+        pre { 
+            margin: 0;
+            font-family: 'Consolas', monospace; 
+            font-size: 14px; 
+            color: #a5b4fc;
+            line-height: 1.5;
+        }
+        .back-link { 
+            margin: 30px 0 60px; 
+            color: #64748b; 
+            text-decoration: none; 
+            font-weight: 600;
+        }
+        .back-link:hover { color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div class="content">
+        <h1>Warp Core</h1>
+        <p>
+            이 작품은 <strong>볼륨 렌더링(Volumetric Rendering)</strong> 기법을 사용해 
+            에너지가 흐르는 듯한 <strong>워프 코어(Warp Core)</strong>의 내부를 시각화했습니다.
+        </p>
+
+        <h2>🎨 작품 해설</h2>
+        <p>
+            <strong>1. 공간 왜곡 (Space Distortion)</strong><br>
+            코드를 보면 <code>sin()</code>과 <code>exp()</code> 함수가 반복적으로 사용됩니다. 
+            이는 공간의 좌표(<code>w</code>)를 계속해서 뒤틀고 왜곡시켜, 마치 **액체나 기체가 흐르는 듯한** 유기적인 움직임을 만들어냅니다.
+        </p>
+        <p>
+            <strong>2. 빛의 누적 (Volumetric Accumulation)</strong><br>
+            일반적인 3D 그래픽은 물체의 '표면'만 그리지만, 이 코드는 빛이 **공간을 통과하며 쌓이는 과정**을 계산합니다.
+            <code>o += ...</code> 부분에서 빛의 밝기를 계속 더해나감으로써, **깊이감 있고 몽환적인 빛의 기둥**을 표현했습니다.
+        </p>
+
+        <h2>💻 Original GLSL Code (Golfed)</h2>
+        <div class="code-block">
+            <pre>vec3 w,p;
+for(float z,d=.1,i,f;i++<1e2;
+    o+=.03/abs(mix(p,w,.1).y+vec4(0,1,2,3)/1e2)*d,
+    z+=d=.3*(length(cos(p.xz))-.4)
+)
+for(p=z*(FC.rgb*2.-r.xyy)/r.y+1.,w=p,f=0.;f++<5.;)
+    w+=sin(w.zxy*f-9.*exp(-d/.1)+t)/f;
+o=tanh(o);</pre>
+        </div>
+    </div>
+
+    <a href="/" class="back-link">← 갤러리로 돌아가기</a>
+
+    <script>
+        let theShader;
+
+        // Vertex Shader
+        const vertSrc = `
+            attribute vec3 aPosition;
+            attribute vec2 aTexCoord;
+            varying vec2 vTexCoord;
+            void main() {
+                vTexCoord = aTexCoord;
+                vec4 positionVec4 = vec4(aPosition, 1.0);
+                gl_Position = positionVec4;
+            }
+        `;
+
+        // Fragment Shader (De-golfed & Ported to WebGL 1)
+        const fragSrc = `
+            #ifdef GL_ES
+            precision highp float;
+            #endif
+
+            uniform vec2 u_resolution;
+            uniform float u_time;
+
+            // Hyperbolic Tangent Approximation
+            vec4 tanh_approx(vec4 x) {
+                vec4 x2 = x * x;
+                return clamp(x * (27.0 + x2) / (27.0 + 9.0 * x2), -1.0, 1.0);
+            }
+
+            void main() {
+                vec2 r = u_resolution;
+                float t = u_time;
+                vec4 o = vec4(0.0); // Output color accumulator
+
+                // Ray Direction (standardized)
+                // (FC.rgb*2.-r.xyy)/r.y roughly maps to uv with z=1.0 approx
+                vec2 uv = (gl_FragCoord.xy * 2.0 - r) / r.y;
+                vec3 rayDir = vec3(uv, 1.0); 
+                
+                float z = 0.0;
+                float d = 0.1;
+                vec3 p = vec3(0.0);
+                vec3 w = vec3(0.0);
+
+                // Volumetric Raymarching Loop (100 steps)
+                for(int i = 0; i < 100; i++) {
+                    
+                    // --- Body Step: Distort Space ---
+                    // p = z * rayDir + 1.0
+                    p = z * rayDir + vec3(1.0);
+                    w = p;
+                    
+                    // Inner Loop: Domain Warping
+                    for(float f = 1.0; f <= 5.0; f += 1.0) {
+                        // w += sin(w.zxy * f - 9.0 * exp(-d / 0.1) + t) / f
+                        w += sin(w.zxy * f - 9.0 * exp(-d * 10.0) + t) / f;
+                    }
+
+                    // --- Increment Step: Accumulate Color & March ---
+                    
+                    // o += .03 / abs(mix(p,w,.1).y + vec4(0,1,2,3)/1e2) * d
+                    // Color shift based on Y position of warped space
+                    float mixY = mix(p, w, 0.1).y;
+                    vec4 colorShift = vec4(0.0, 1.0, 2.0, 3.0) / 100.0;
+                    
+                    o += 0.03 / abs(mixY + colorShift) * d;
+
+                    // z += d = .3 * (length(cos(p.xz)) - .4)
+                    // Update step size d based on geometry (columns defined by cos)
+                    d = 0.3 * (length(cos(p.xz)) - 0.4);
+                    z += d;
+                }
+
+                // Tone mapping
+                gl_FragColor = tanh_approx(o);
+                gl_FragColor.a = 1.0;
+            }
+        `;
+
+        function setup() {
+            let c = createCanvas(600, 600, WEBGL);
+            c.parent('canvas-container');
+            noStroke();
+            theShader = createShader(vertSrc, fragSrc);
+        }
+
+        function draw() {
+            shader(theShader);
+            theShader.setUniform('u_resolution', [width, height]);
+            theShader.setUniform('u_time', millis() / 1000.0);
+            
+            quad(-1, -1, 1, -1, 1, 1, -1, 1);
+        }
+    </script>
+</body>
+</html>
