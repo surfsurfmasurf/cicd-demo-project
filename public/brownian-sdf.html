@@ -198,12 +198,7 @@
             theShader.setUniform('u_time', millis() / 1000.0);
             
             // Draw a full-screen quad in clip space (-1 to 1)
-            beginShape();
-            vertex(-1, -1);
-            vertex(1, -1);
-            vertex(1, 1);
-            vertex(-1, 1);
-            endShape(CLOSE);
+            quad(-1, -1, 1, -1, 1, 1, -1, 1);
         }
     </script>
 </body>
