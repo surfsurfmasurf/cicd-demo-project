@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hilbert Curve Resolutions - CI/CD Demo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+        #canvas-container { 
+            margin-top: 40px; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); 
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            width: 800px;
+            height: 400px;
+            background: #1e293b;
+        }
+        .content { 
+            max-width: 900px; 
+            width: 90%; 
+            margin: 40px 0; 
+            padding: 30px; 
+            background: #1e293b; 
+            border-radius: 16px; 
+            border: 1px solid #334155;
+        }
+        h1 { color: #38bdf8; margin-bottom: 10px; font-size: 2rem; }
+        p { line-height: 1.7; color: #cbd5e1; margin-bottom: 15px; }
+        .back-link { 
+            margin: 30px 0 60px; 
+            color: #64748b; 
+            text-decoration: none; 
+            font-weight: 600;
+        }
+        .back-link:hover { color: #38bdf8; }
+        
+        @media (max-width: 850px) {
+            #canvas-container { width: 95vw; height: auto; aspect-ratio: 2/1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div class="content">
+        <h1>Hilbert Curve (Resolution Study)</h1>
+        <p>
+            <strong>힐베르트 곡선(Hilbert Curve)</strong>은 1차원의 선으로 2차원 공간을 완전히 채우는 
+            <strong>공간 충전 곡선(Space-filling curve)</strong>입니다.
+        </p>
+        <p>
+            이 작품은 힐베르트 곡선의 <strong>재귀적 성질(Recursion)</strong>을 시각화했습니다.
+            총 8단계(Order 1 ~ Order 8)의 서로 다른 해상도를 한눈에 비교할 수 있습니다.
+            왼쪽 상단(Order 1)에서 시작하여 오른쪽 하단(Order 8)으로 갈수록 점점 더 촘촘하고 복잡한 패턴이 드러납니다.
+        </p>
+        <p>
+            <strong>알고리즘:</strong> Iterative Mapping 방식을 사용하여 각 점(Index)을 2차원 좌표(x, y)로 변환하고 연결했습니다.
+        </p>
+    </div>
+
+    <a href="/" class="back-link">← 갤러리로 돌아가기</a>
+
+    <script>
+        // Hilbert Curve Implementation
+        // Canvas size: 800x400 (Divided into 8 panels: 200x200 each)
+        
+        let order;
+        let N;
+        let total;
+        let path = [];
+
+        function setup() {
+            let c = createCanvas(800, 400);
+            c.parent('canvas-container');
+            noLoop();
+            background(15, 23, 42); // slate-900
+            
+            // Draw 8 panels (4 cols x 2 rows)
+            let panelSize = 200;
+            
+            for (let i = 0; i < 8; i++) {
+                let order = i + 1; // Order 1 to 8
+                
+                // Calculate panel position
+                let col = i % 4;
+                let row = Math.floor(i / 4);
+                
+                let startX = col * panelSize;
+                let startY = row * panelSize;
+                
+                drawHilbert(startX, startY, panelSize, order);
+                
+                // Draw border
+                stroke(51, 65, 85); // slate-700
+                strokeWeight(1);
+                noFill();
+                rect(startX, startY, panelSize, panelSize);
+                
+                // Draw label
+                noStroke();
+                fill(148, 163, 184); // slate-400
+                textAlign(LEFT, TOP);
+                textSize(12);
+                text(`Order ${order}`, startX + 10, startY + 10);
+            }
+        }
+        
+        function drawHilbert(xOffset, yOffset, size, order) {
+            let N = pow(2, order);
+            let total = N * N;
+            
+            // Adjust visualization based on order
+            let sw = map(order, 1, 8, 4, 0.5);
+            strokeWeight(sw);
+            
+            // Gradient Color
+            // Low order: Cyan (#38bdf8), High order: Indigo (#818cf8)
+            let r = map(order, 1, 8, 56, 129);
+            let g = map(order, 1, 8, 189, 140);
+            let b = map(order, 1, 8, 248, 248);
+            stroke(r, g, b);
+            noFill();
+            
+            let margin = size * 0.1;
+            let drawSize = size - margin * 2;
+            let len = drawSize / N;
+            
+            beginShape();
+            for (let i = 0; i < total; i++) {
+                let v = hilbert(i, order);
+                let px = xOffset + margin + v.x * len + len/2;
+                let py = yOffset + margin + v.y * len + len/2;
+                vertex(px, py);
+            }
+            endShape();
+        }
+
+        function hilbert(i, order) {
+            let points = [
+                createVector(0, 0),
+                createVector(0, 1),
+                createVector(1, 1),
+                createVector(1, 0)
+            ];
+
+            let index = i & 3;
+            let v = points[index];
+
+            for (let j = 1; j < order; j++) {
+                i = i >>> 2;
+                index = i & 3;
+                let len = pow(2, j);
+                if (index == 0) {
+                    let temp = v.x;
+                    v.x = v.y;
+                    v.y = temp;
+                } else if (index == 1) {
+                    v.y += len;
+                } else if (index == 2) {
+                    v.x += len;
+                    v.y += len;
+                } else if (index == 3) {
+                    let temp = len - 1 - v.x;
+                    v.x = len - 1 - v.y;
+                    v.y = temp;
+                    v.x += len;
+                }
+            }
+            return v;
+        }
+    </script>
+</body>
+</html>
