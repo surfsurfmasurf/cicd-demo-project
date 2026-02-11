@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>p5.js Art Gallery - CI/CD Demo</title>
+    <title>옥수동 굴다리 갤러리 - CI/CD Demo</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -14,8 +14,40 @@
             padding: 40px 20px;
         }
         .container { max-width: 1000px; margin: 0 auto; }
-        header { text-align: center; margin-bottom: 60px; }
-        h1 { font-size: 3rem; margin-bottom: 10px; background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            padding: 80px 20px;
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 24px;
+            border: 1px solid #334155;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 0 15px rgba(56, 189, 248, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Neon Banner Effect */
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #f8fafc;
+            /* Neon Glow */
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5), 0 0 40px rgba(129, 140, 248, 0.3);
+            font-weight: 900;
+            letter-spacing: -2px;
+        }
+        
         p.subtitle { color: #94a3b8; font-size: 1.2rem; }
         
         .gallery {
@@ -85,7 +117,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>p5.js Art Gallery</h1>
+            <h1>옥수동 굴다리 갤러리</h1>
             <p class="subtitle">CI/CD 파이프라인으로 자동 배포되는 생성 예술 컬렉션</p>
         </header>
 
