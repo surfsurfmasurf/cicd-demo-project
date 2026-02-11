@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generative Shader - p5.js WebGL</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+        #canvas-container { 
+            margin-top: 40px; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2); 
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            /* Canvas size is 400px */
+            width: 400px;
+            height: 400px;
+        }
+        .content { 
+            max-width: 900px; 
+            width: 90%; 
+            margin: 40px 0; 
+            padding: 30px; 
+            background: #1e293b; 
+            border-radius: 16px; 
+            border: 1px solid #334155;
+        }
+        h1 { 
+            color: #38bdf8; 
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+        h2 {
+            color: #94a3b8;
+            font-size: 1.2rem;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+        }
+        p {
+            line-height: 1.7;
+            color: #cbd5e1;
+            margin-bottom: 15px;
+        }
+        .code-block { 
+            background: #0f172a; 
+            padding: 20px; 
+            border-radius: 8px; 
+            overflow-x: auto; 
+            border: 1px solid #334155;
+            position: relative;
+        }
+        pre { 
+            margin: 0;
+            font-family: 'Consolas', monospace; 
+            font-size: 14px; 
+            color: #a5b4fc;
+            line-height: 1.5;
+        }
+        .back-link { 
+            margin: 30px 0 60px; 
+            color: #64748b; 
+            text-decoration: none; 
+            transition: color 0.3s; 
+            font-weight: 600;
+        }
+        .back-link:hover { color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div class="content">
+        <h1>Generative Shader</h1>
+        <p>요청하신 GLSL 코드를 <strong>p5.js WebGL Shader</strong>로 변환하여 구현했습니다.</p>
+        
+        <h2>🎨 작품 해설</h2>
+        <p>
+            이 코드는 <strong>Raymarching(광선 투사)</strong> 기법을 사용하는 쉐이더 아트입니다.
+            수학적 거리 함수(SDF)와 삼각함수의 반복 계산을 통해 3차원 공간의 복잡한 구조를 렌더링합니다.
+            단순한 JavaScript 루프(`draw()` 내 실행)로는 수백만 번의 연산이 필요하여 매우 느리기 때문에, 
+            GPU를 활용하는 <strong>Fragment Shader</strong>로 구현해야 실시간 렌더링이 가능합니다.
+        </p>
+
+        <h2>💻 Shader Source Code</h2>
+        <div class="code-block">
+            <pre id="shader-code"></pre>
+        </div>
+    </div>
+
+    <a href="/" class="back-link">← 갤러리로 돌아가기</a>
+
+    <script>
+        let theShader;
+
+        // Vertex Shader: 기본 패스스루
+        const vertSrc = `
+            attribute vec3 aPosition;
+            attribute vec2 aTexCoord;
+            varying vec2 vTexCoord;
+            void main() {
+                vTexCoord = aTexCoord;
+                vec4 positionVec4 = vec4(aPosition, 1.0);
+                positionVec4.xy = positionVec4.xy * 2.0 - 1.0;
+                gl_Position = positionVec4;
+            }
+        `;
+
+        // Fragment Shader: 요청하신 GLSL 코드 변환
+        const fragSrc = `
+            #ifdef GL_ES
+            precision highp float;
+            #endif
+
+            uniform vec2 u_resolution;
+            uniform float u_time;
+
+            void main() {
+                // p5.js 해상도 (width, height)
+                vec2 r = u_resolution;
+                float t = u_time;
+                
+                // gl_FragCoord: 현재 픽셀 위치 (x, y, z, 1/w)
+                vec4 FC = gl_FragCoord; 
+                vec4 o = vec4(0.0);
+
+                // 초기 변수 설정
+                float z = 0.0; // 거리 누적값 (Distance from camera)
+                float d = 0.0; // 현재 스텝의 거리 (SDF)
+                float i = 0.0; // 반복 카운터
+
+                // Raymarching Loop (50회 반복)
+                for (float j = 0.0; j < 50.0; j++) {
+                    i = j;
+
+                    // Ray Direction 계산 (Golf Code: vec3 p=z*normalize(FC.rgb*2.-r.xyx))
+                    // FC.rgb -> (x, y, z). r.xyx -> (w, h, w).
+                    // 화면 중앙을 (0,0)으로 맞추고 정규화
+                    vec3 p = z * normalize(vec3(FC.xy, FC.z) * 2.0 - vec3(r.x, r.y, r.x));
+
+                    // 내부 루프: 프랙탈/노이즈 구조 생성 (Golf Code: for(d=0.;d++<9.;)...)
+                    for (float k = 0.0; k < 9.0; k++) {
+                        float dd = k + 1.0; 
+                        // 삼각함수와 회전을 이용해 좌표 비틀기
+                        p += 0.4 * sin(p.yzx * dd - z + t + i) / dd + 0.5;
+                    }
+                    
+                    // 거리 함수 (SDF) 계산
+                    // Golf Code: d=length(vec4(abs(p.y+p.z*.5),sin(p-z)/7.))/(4.+z*z/1e2);
+                    vec3 sinPart = sin(p - z) / 7.0;
+                    float absPart = abs(p.y + p.z * 0.5);
+                    d = length(vec4(absPart, sinPart)) / (4.0 + z * z / 100.0);
+                    
+                    // Ray 전진
+                    z += d;
+                    
+                    // 색상 누적 (Volumetric Accumulation)
+                    // Golf Code: o+=(.9+sin(i*.1-vec4(6,1,2,0)))/d/d/z+d*z/vec4(4,2,1,0)
+                    vec4 colorShift = vec4(6.0, 1.0, 2.0, 0.0);
+                    vec4 baseColor = 0.9 + sin(i * 0.1 - colorShift);
+                    
+                    // 빛의 감쇠(Attenuation) 계산
+                    // 0으로 나누는 것을 방지하기 위해 아주 작은 값(1e-5) 사용 가능하지만, 원본 느낌 유지를 위해 그대로 둠
+                    // (WebGL에서는 0으로 나누면 보통 무한대나 큰 값이 되어 흰색/밝은색이 됨)
+                    vec4 term1 = baseColor / (d * d * z);
+                    
+                    // 배경/거리감 추가
+                    vec4 divVec = vec4(4.0, 2.0, 1.0, 0.001); // Alpha 0 방지
+                    vec4 term2 = (d * z) / divVec;
+                    
+                    o += term1 + term2;
+                }
+                
+                // 톤 매핑 (Tanh 대체 구현)
+                // Golf Code: o=tanh(o/2e3)
+                // GLSL 1.0에는 tanh가 없으므로 수식으로 구현: (e^2x - 1) / (e^2x + 1)
+                vec4 x = o / 2000.0;
+                vec4 e2x = exp(2.0 * x);
+                o = (e2x - 1.0) / (e2x + 1.0);
+                
+                // 알파값 1.0으로 고정 (화면 표시용)
+                o.a = 1.0;
+                
+                gl_FragColor = o;
+            }
+        `;
+
+        function setup() {
+            // WEBGL 모드로 캔버스 생성
+            let c = createCanvas(400, 400, WEBGL);
+            c.parent('canvas-container');
+            noStroke();
+            
+            // 쉐이더 생성
+            theShader = createShader(vertSrc, fragSrc);
+            
+            // 코드 블록에 소스 표시
+            document.getElementById('shader-code').textContent = fragSrc;
+        }
+
+        function draw() {
+            // 쉐이더 활성화
+            shader(theShader);
+            
+            // 유니폼 변수 전달
+            theShader.setUniform('u_resolution', [width, height]);
+            theShader.setUniform('u_time', millis() / 1000.0);
+            
+            // 화면 전체를 덮는 사각형 그리기 (쉐이더 실행 트리거)
+            rect(0, 0, width, height);
+        }
+    </script>
+</body>
+</html>
