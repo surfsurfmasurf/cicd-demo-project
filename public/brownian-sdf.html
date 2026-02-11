@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brownian SDF Object - CI/CD Demo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+        #canvas-container { 
+            margin-top: 40px; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); 
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            width: 400px;
+            height: 400px;
+            background: #000;
+        }
+        .content { 
+            max-width: 900px; 
+            width: 90%; 
+            margin: 40px 0; 
+            padding: 30px; 
+            background: #1e293b; 
+            border-radius: 16px; 
+            border: 1px solid #334155;
+        }
+        h1 { color: #38bdf8; margin-bottom: 10px; font-size: 2rem; }
+        h2 { color: #94a3b8; font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+        p { line-height: 1.7; color: #cbd5e1; margin-bottom: 15px; }
+        .code-block { 
+            background: #0f172a; 
+            padding: 20px; 
+            border-radius: 8px; 
+            overflow-x: auto; 
+            border: 1px solid #334155;
+            position: relative;
+        }
+        pre { 
+            margin: 0;
+            font-family: 'Consolas', monospace; 
+            font-size: 14px; 
+            color: #a5b4fc;
+            line-height: 1.5;
+        }
+        .back-link { 
+            margin: 30px 0 60px; 
+            color: #64748b; 
+            text-decoration: none; 
+            font-weight: 600;
+        }
+        .back-link:hover { color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div class="content">
+        <h1>Brownian Motion on SDF</h1>
+        <p>
+            이 작품은 <strong>수학적 거리 함수(SDF)</strong>를 이용해 만든 3D 객체 위에서 
+            <strong>브라운 운동(Brownian Motion)</strong>처럼 불규칙하게 움직이는 빛의 흐름을 표현합니다.
+        </p>
+
+        <h2>🎨 작품 해설 (초등학생도 이해하기 쉽게!)</h2>
+        <p>
+            <strong>1. 작은 상자들로 만든 큰 공 (SDF Object)</strong><br>
+            코드를 보면 <code>round(p/.5)</code>라는 부분이 있어요. 이건 공간을 0.5 간격으로 잘라서 **무수히 많은 작은 방**을 만드는 거예요.
+            각 방마다 **작은 상자(Cube)**를 하나씩 넣고, 마지막에 **큰 공(Sphere)** 모양 안으로만 보이게 잘라냈어요.
+            그래서 마치 **레고 블록으로 만든 공**처럼 보이는 거죠! 🧊⚽
+        </p>
+        <p>
+            <strong>2. 춤추는 빛 (Brownian Motion)</strong><br>
+            **브라운 운동**은 물 위에 떠 있는 꽃가루가 물 분자와 부딪혀서 이리저리 튀는 현상을 말해요.
+            여기서는 빛이 이 복잡한 상자들 사이를 통과하면서 **무작위로 굴절되고 반사되는 모습**을 표현했어요.
+            마치 미로 속을 헤매는 반딧불이처럼요! ✨
+        </p>
+
+        <h2>💻 Shader Source Code</h2>
+        <div class="code-block">
+            <pre id="shader-code"></pre>
+        </div>
+    </div>
+
+    <a href="/" class="back-link">← 갤러리로 돌아가기</a>
+
+    <script>
+        let theShader;
+
+        // Vertex Shader
+        const vertSrc = `
+            attribute vec3 aPosition;
+            attribute vec2 aTexCoord;
+            varying vec2 vTexCoord;
+            void main() {
+                vTexCoord = aTexCoord;
+                vec4 positionVec4 = vec4(aPosition, 1.0);
+                positionVec4.xy = positionVec4.xy * 2.0 - 1.0;
+                gl_Position = positionVec4;
+            }
+        `;
+
+        // Fragment Shader (SDF Raymarching Implementation)
+        const fragSrc = `
+            #ifdef GL_ES
+            precision highp float;
+            #endif
+
+            uniform vec2 u_resolution;
+            uniform float u_time;
+
+            // Rotation Matrix
+            mat2 rot(float a) {
+                float s = sin(a);
+                float c = cos(a);
+                return mat2(c, -s, s, c);
+            }
+
+            // Scene Distance Function
+            float map(vec3 p) {
+                // Apply rotation over time
+                p.yz *= rot(u_time * 0.2);
+                p.xz *= rot(u_time * 0.3);
+
+                // 1. Box Grid (Modulation)
+                // vec3 t = p - 0.5 * round(p / 0.5); (GLSL 1.0 workaround for round)
+                vec3 t = p - 0.5 * floor(p / 0.5 + 0.5);
+                
+                // 2. Box SDF
+                vec3 r = abs(t) - vec3(0.12); // Slightly larger boxes
+                float box = length(max(r, 0.0)) + min(max(r.x, max(r.y, r.z)), 0.0);
+                
+                // 3. Sphere Intersection
+                float sphere = length(p) - 1.9;
+                
+                // Combine: Boxes restricted inside the sphere
+                return max(box, sphere);
+            }
+
+            void main() {
+                vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution.xy) / u_resolution.y;
+                vec3 col = vec3(0.0);
+
+                // Ray setup
+                vec3 ro = vec3(0.0, 0.0, -4.0);
+                vec3 rd = normalize(vec3(uv, 1.0));
+
+                // Raymarching Loop
+                float t = 0.0;
+                float d = 0.0;
+                int steps = 0;
+                
+                for(int i = 0; i < 64; i++) {
+                    vec3 p = ro + rd * t;
+                    d = map(p);
+                    if(d < 0.001 || t > 10.0) break;
+                    t += d;
+                    steps = i;
+                }
+
+                // Coloring based on iteration count (Glow Effect)
+                if(t < 10.0) {
+                    float glow = float(steps) / 64.0;
+                    // Blue-Purple Glow
+                    col = vec3(0.2, 0.6, 1.0) * glow * 2.5;
+                    col += vec3(1.0, 0.3, 0.8) * glow * glow;
+                } 
+                else {
+                    // Dark Background
+                    col = vec3(0.02, 0.02, 0.05);
+                }
+
+                gl_FragColor = vec4(col, 1.0);
+            }
+        `;
+
+        function setup() {
+            let c = createCanvas(400, 400, WEBGL);
+            c.parent('canvas-container');
+            noStroke();
+            theShader = createShader(vertSrc, fragSrc);
+            document.getElementById('shader-code').textContent = fragSrc;
+        }
+
+        function draw() {
+            shader(theShader);
+            theShader.setUniform('u_resolution', [width, height]);
+            theShader.setUniform('u_time', millis() / 1000.0);
+            rect(0, 0, width, height);
+        }
+    </script>
+</body>
+</html>
