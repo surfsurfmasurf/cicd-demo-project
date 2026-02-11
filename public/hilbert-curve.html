@@ -87,32 +87,61 @@
         <h2>💻 Source Code (Core Logic)</h2>
         <div class="code-block">
 <pre>
-// Hilbert Curve Mapping Logic
+// 🧭 힐베르트 곡선 길 찾기 함수
+// 숫자(i)를 넣으면 -> 미로 속 위치(x, y)를 알려줘요!
 function hilbert(i, order) {
+    // 1단계: 가장 기본이 되는 4개의 점 위치 ( 'ㄷ' 모양 )
+    // 왼쪽 아래(0,0) -> 왼쪽 위(0,1) -> 오른쪽 위(1,1) -> 오른쪽 아래(1,0)
     let points = [
-        createVector(0, 0), createVector(0, 1),
-        createVector(1, 1), createVector(1, 0)
+        createVector(0, 0),
+        createVector(0, 1),
+        createVector(1, 1),
+        createVector(1, 0)
     ];
+
+    // 현재 몇 번째 점인지(0~3) 확인해서 기본 위치를 잡아요.
+    // 'i & 3'은 i를 4로 나눈 나머지와 같아요.
     let index = i & 3;
     let v = points[index];
-    
+
+    // 2단계: 복잡한 미로 만들기 (반복문)
+    // Order(차수)가 높을수록 미로가 더 복잡해져요!
     for (let j = 1; j < order; j++) {
+        
+        // i를 4로 나누어서 다음 단계로 넘어가요. (비트 연산)
         i = i >>> 2;
         index = i & 3;
+
+        // 현재 단계의 사각형 크기 (2의 j승)
         let len = pow(2, j);
+
+        // 3단계: 사각형을 회전시키고 이동시켜요!
         if (index == 0) {
-            let temp = v.x; v.x = v.y; v.y = temp;
-        } else if (index == 1) {
+            // 왼쪽 아래: 시계 방향으로 돌리기 ↷
+            let temp = v.x;
+            v.x = v.y;
+            v.y = temp;
+        } 
+        else if (index == 1) {
+            // 왼쪽 위: 그냥 위로 올리기 ↑
             v.y += len;
-        } else if (index == 2) {
-            v.x += len; v.y += len;
-        } else if (index == 3) {
+        } 
+        else if (index == 2) {
+            // 오른쪽 위: 위로 올리고 오른쪽으로 가기 ↗
+            v.x += len;
+            v.y += len;
+        } 
+        else if (index == 3) {
+            // 오른쪽 아래: 반시계 방향으로 돌리고 이동하기 ↶
             let temp = len - 1 - v.x;
             v.x = len - 1 - v.y;
             v.y = temp;
+            
+            // 위치 보정 (오른쪽으로 이동)
             v.x += len;
         }
     }
+    // 최종 위치(x, y)를 반환해요!
     return v;
 }
 </pre>
@@ -123,8 +152,9 @@ function hilbert(i, order) {
 
     <script>
         let orders = [1, 2, 3, 4, 5, 6, 7, 8];
-        // Pre-calculate paths for better performance (High orders have too many points for realtime calc)
+        // 미리 계산된 길(좌표)들을 저장할 배열
         let paths = [];
+        // 각 패널마다 얼마나 그렸는지 세는 카운터
         let counters = [0, 0, 0, 0, 0, 0, 0, 0];
         let panelSize = 200;
 
@@ -132,17 +162,15 @@ function hilbert(i, order) {
             let c = createCanvas(800, 400);
             c.parent('canvas-container');
             
-            // Pre-calculate paths
+            // 🚀 미리 계산하기 (Pre-calculation)
+            // 매번 계산하면 컴퓨터가 힘들어해서 미리 길을 다 찾아놔요!
             for (let i = 0; i < 8; i++) {
                 let order = orders[i];
-                let N = pow(2, order);
-                let total = N * N;
+                let N = pow(2, order); // 한 변의 칸 개수 (2, 4, 8, 16...)
+                let total = N * N;     // 전체 점의 개수
                 
                 paths[i] = [];
-                // Only store necessary points for drawing
                 for (let j = 0; j < total; j++) {
-                    // Optimization: For high orders, we don't need every single pixel for animation
-                    // but let's keep it simple first
                     paths[i].push(hilbert(j, order));
                 }
             }
@@ -150,74 +178,81 @@ function hilbert(i, order) {
         }
 
         function draw() {
-            // Partial clear (optional trail effect or full clear)
+            // 배경을 살짝 덮어서 잔상 효과 주기 (지금은 완전 덮음)
             background(15, 23, 42); 
 
+            // 8개의 패널을 하나씩 그려요
             for (let i = 0; i < 8; i++) {
                 let order = orders[i];
                 let N = pow(2, order);
                 let total = N * N;
                 
-                // Panel Position
+                // 패널 위치 정하기 (2줄 4칸)
                 let col = i % 4;
                 let row = Math.floor(i / 4);
                 let startX = col * panelSize;
                 let startY = row * panelSize;
                 
-                // Drawing Area
+                // 그림 그려질 영역 (여백 주기)
                 let margin = panelSize * 0.1;
                 let drawSize = panelSize - margin * 2;
-                let len = drawSize / N;
+                let len = drawSize / N; // 한 칸의 크기
 
-                // Draw Border & Text
+                // 테두리 네모 그리기
                 stroke(51, 65, 85);
                 strokeWeight(1);
                 noFill();
                 rect(startX, startY, panelSize, panelSize);
                 
+                // "Order 1", "Order 2" 글씨 쓰기
                 noStroke();
                 fill(148, 163, 184);
                 textAlign(LEFT, TOP);
                 textSize(12);
                 text(`Order ${order}`, startX + 10, startY + 10);
 
-                // Animation Progress
-                // Adjust speed: Low order = slow step, High order = fast step
-                // Goal: Complete all roughly at same time (~5 seconds = 300 frames)
+                // 🏃‍♂️ 달리기 속도 조절
+                // 점이 적은 곳은 천천히, 점이 많은 곳(고해상도)은 빠르게!
+                // 약 5초(300프레임) 안에 도착하도록 계산
                 let speed = Math.ceil(total / 300);
                 if (speed < 1) speed = 1;
                 
+                // 카운터 증가 (앞으로 전진!)
                 counters[i] += speed;
-                if (counters[i] > total) counters[i] = 0; // Loop
+                // 끝까지 다 그렸으면 처음으로 돌아가기 (무한 반복)
+                if (counters[i] > total) counters[i] = 0; 
 
-                // Draw Curve
+                // ✍️ 곡선 그리기 시작
                 noFill();
-                strokeWeight(map(order, 1, 8, 3, 1));
+                strokeWeight(map(order, 1, 8, 3, 1)); // 굵기 조절
                 
-                // To optimize performance, we draw the full path up to current index
                 beginShape();
                 for (let j = 0; j < counters[i]; j++) {
-                    // Skip points for high orders to maintain FPS
+                    // ⚡️ 성능 최적화 (렉 걸림 방지)
+                    // 점이 너무 많으면(Order 7, 8) 중간 점들을 건너뛰며 그려요.
                     if (order > 6 && j % 2 !== 0 && j !== counters[i]-1) continue;
                     
                     let v = paths[i][j];
+                    // 원래 좌표(0, 1...)를 화면 좌표(픽셀)로 변환
                     let px = startX + margin + v.x * len + len/2;
                     let py = startY + margin + v.y * len + len/2;
                     
-                    // Gradient Color: Cyan -> Indigo
+                    // 🌈 무지개 색칠하기 (그라데이션)
+                    // 처음(Cyan) -> 끝(Indigo)으로 색이 변해요
                     let progress = j / total;
                     stroke(
-                        lerp(56, 129, progress),  // R
-                        lerp(189, 140, progress), // G
-                        248                       // B
+                        lerp(56, 129, progress),  // R (빨강)
+                        lerp(189, 140, progress), // G (초록)
+                        248                       // B (파랑 - 고정)
                     );
                     
-                    vertex(px, py);
+                    vertex(px, py); // 점 찍기
                 }
                 endShape();
             }
         }
 
+        // 🧠 힐베르트 알고리즘 (핵심 두뇌)
         function hilbert(i, order) {
             let points = [
                 createVector(0, 0), createVector(0, 1),
