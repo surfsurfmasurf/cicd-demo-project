@@ -106,7 +106,6 @@
             void main() {
                 vTexCoord = aTexCoord;
                 vec4 positionVec4 = vec4(aPosition, 1.0);
-                positionVec4.xy = positionVec4.xy * 2.0 - 1.0;
                 gl_Position = positionVec4;
             }
         `;
@@ -197,7 +196,14 @@
             shader(theShader);
             theShader.setUniform('u_resolution', [width, height]);
             theShader.setUniform('u_time', millis() / 1000.0);
-            rect(0, 0, 1, 1);
+            
+            // Draw a full-screen quad in clip space (-1 to 1)
+            beginShape();
+            vertex(-1, -1);
+            vertex(1, -1);
+            vertex(1, 1);
+            vertex(-1, 1);
+            endShape(CLOSE);
         }
     </script>
 </body>
