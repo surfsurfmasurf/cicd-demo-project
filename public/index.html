@@ -17,14 +17,17 @@
         
         header {
             text-align: center;
-            margin-bottom: 60px;
-            padding: 80px 20px;
+            margin-bottom: 40px;
+            padding: 40px 20px;
             background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            border-radius: 24px;
+            border-radius: 16px;
             border: 1px solid #334155;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 0 15px rgba(56, 189, 248, 0.1);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.2), inset 0 0 20px rgba(56, 189, 248, 0.05);
             position: relative;
             overflow: hidden;
+            max-width: 80%;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         /* Neon Banner Effect */
@@ -34,18 +37,25 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+            height: 2px;
+            background: #38bdf8;
+            box-shadow: 0 0 10px #38bdf8, 0 0 20px #38bdf8;
         }
 
         h1 {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            color: #f8fafc;
-            /* Neon Glow */
-            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5), 0 0 40px rgba(129, 140, 248, 0.3);
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: #fff;
+            text-shadow: 
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 20px #38bdf8,
+                0 0 30px #38bdf8,
+                0 0 40px #38bdf8,
+                0 0 50px #38bdf8,
+                0 0 75px #38bdf8;
             font-weight: 900;
-            letter-spacing: -2px;
+            letter-spacing: -1px;
         }
         
         p.subtitle { color: #94a3b8; font-size: 1.2rem; }
