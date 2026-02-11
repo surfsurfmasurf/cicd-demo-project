@@ -121,8 +121,8 @@ o=tanh(o);</pre>
             precision highp float;
             #endif
 
-            uniform vec2 u_resolution;
             uniform float u_time;
+            varying vec2 vTexCoord; // Use texture coord for robust resolution handling
 
             // Hyperbolic Tangent Approximation
             vec4 tanh_approx(vec4 x) {
@@ -131,14 +131,17 @@ o=tanh(o);</pre>
             }
 
             void main() {
-                vec2 r = u_resolution;
                 float t = u_time;
                 vec4 o = vec4(0.0); // Output color accumulator
 
-                // Ray Direction (standardized)
-                // (FC.rgb*2.-r.xyy)/r.y roughly maps to uv with z=1.0 approx
-                vec2 uv = (gl_FragCoord.xy * 2.0 - r) / r.y;
-                vec3 rayDir = vec3(uv, 1.0); 
+                // Coordinate setup: -1 to 1 based on texture coordinates
+                // This avoids issues with gl_FragCoord and pixel density
+                vec2 uv = vTexCoord * 2.0 - 1.0;
+                
+                // Ray Direction
+                // We assume looking along Z axis. 
+                // Using -1.0 for Z creates a standard perspective look for this effect.
+                vec3 rayDir = vec3(uv, -1.0); 
                 
                 float z = 0.0;
                 float d = 0.1;
@@ -169,7 +172,7 @@ o=tanh(o);</pre>
                     o += 0.03 / abs(mixY + colorShift) * d;
 
                     // z += d = .3 * (length(cos(p.xz)) - .4)
-                    // Update step size d based on geometry (columns defined by cos)
+                    // Update step size d based on geometry
                     d = 0.3 * (length(cos(p.xz)) - 0.4);
                     z += d;
                 }
@@ -181,17 +184,23 @@ o=tanh(o);</pre>
         `;
 
         function setup() {
+            // Create canvas with WEBGL mode
             let c = createCanvas(600, 600, WEBGL);
             c.parent('canvas-container');
             noStroke();
+            
+            // Create and set shader
             theShader = createShader(vertSrc, fragSrc);
         }
 
         function draw() {
+            // Apply shader
             shader(theShader);
-            theShader.setUniform('u_resolution', [width, height]);
+            
+            // Pass uniforms
             theShader.setUniform('u_time', millis() / 1000.0);
             
+            // Draw full-screen quad (clip space -1 to 1)
             quad(-1, -1, 1, -1, 1, 1, -1, 1);
         }
     </script>
