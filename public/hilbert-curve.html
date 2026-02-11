@@ -6,8 +6,9 @@
     <title>Hilbert Curve Resolutions - CI/CD Demo</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
+            margin: 0; 
+            padding: 0; 
             background: #0f172a; 
             color: #e2e8f0; 
             font-family: 'Pretendard', -apple-system, sans-serif;
@@ -36,7 +37,23 @@
             border: 1px solid #334155;
         }
         h1 { color: #38bdf8; margin-bottom: 10px; font-size: 2rem; }
+        h2 { color: #94a3b8; font-size: 1.2rem; margin-top: 30px; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
         p { line-height: 1.7; color: #cbd5e1; margin-bottom: 15px; }
+        .code-block { 
+            background: #0f172a; 
+            padding: 20px; 
+            border-radius: 8px; 
+            overflow-x: auto; 
+            border: 1px solid #334155;
+            position: relative;
+        }
+        pre { 
+            margin: 0;
+            font-family: 'Consolas', monospace; 
+            font-size: 14px; 
+            color: #a5b4fc;
+            line-height: 1.5;
+        }
         .back-link { 
             margin: 30px 0 60px; 
             color: #64748b; 
@@ -54,127 +71,172 @@
     <div id="canvas-container"></div>
     
     <div class="content">
-        <h1>Hilbert Curve (Resolution Study)</h1>
+        <h1>Hilbert Curve (Animated)</h1>
         <p>
             <strong>힐베르트 곡선(Hilbert Curve)</strong>은 1차원의 선으로 2차원 공간을 완전히 채우는 
             <strong>공간 충전 곡선(Space-filling curve)</strong>입니다.
         </p>
+        
+        <h2>🎨 작품 해설</h2>
         <p>
-            이 작품은 힐베르트 곡선의 <strong>재귀적 성질(Recursion)</strong>을 시각화했습니다.
-            총 8단계(Order 1 ~ Order 8)의 서로 다른 해상도를 한눈에 비교할 수 있습니다.
-            왼쪽 상단(Order 1)에서 시작하여 오른쪽 하단(Order 8)으로 갈수록 점점 더 촘촘하고 복잡한 패턴이 드러납니다.
+            이 작품은 힐베르트 곡선이 <strong>Order 1부터 Order 8까지 점진적으로 진화하는 과정</strong>을 애니메이션으로 보여줍니다.
+            8개의 패널(Resolution)이 각각 독립적인 속도로 곡선을 그려나가며, 
+            낮은 차수(저해상도)는 빠르게, 높은 차수(고해상도)는 천천히 공간을 채워나가는 모습을 관찰할 수 있습니다.
         </p>
-        <p>
-            <strong>알고리즘:</strong> Iterative Mapping 방식을 사용하여 각 점(Index)을 2차원 좌표(x, y)로 변환하고 연결했습니다.
-        </p>
+
+        <h2>💻 Source Code (Core Logic)</h2>
+        <div class="code-block">
+<pre>
+// Hilbert Curve Mapping Logic
+function hilbert(i, order) {
+    let points = [
+        createVector(0, 0), createVector(0, 1),
+        createVector(1, 1), createVector(1, 0)
+    ];
+    let index = i & 3;
+    let v = points[index];
+    
+    for (let j = 1; j < order; j++) {
+        i = i >>> 2;
+        index = i & 3;
+        let len = pow(2, j);
+        if (index == 0) {
+            let temp = v.x; v.x = v.y; v.y = temp;
+        } else if (index == 1) {
+            v.y += len;
+        } else if (index == 2) {
+            v.x += len; v.y += len;
+        } else if (index == 3) {
+            let temp = len - 1 - v.x;
+            v.x = len - 1 - v.y;
+            v.y = temp;
+            v.x += len;
+        }
+    }
+    return v;
+}
+</pre>
+        </div>
     </div>
 
     <a href="/" class="back-link">← 갤러리로 돌아가기</a>
 
     <script>
-        // Hilbert Curve Implementation
-        // Canvas size: 800x400 (Divided into 8 panels: 200x200 each)
-        
-        let order;
-        let N;
-        let total;
-        let path = [];
+        let orders = [1, 2, 3, 4, 5, 6, 7, 8];
+        // Pre-calculate paths for better performance (High orders have too many points for realtime calc)
+        let paths = [];
+        let counters = [0, 0, 0, 0, 0, 0, 0, 0];
+        let panelSize = 200;
 
         function setup() {
             let c = createCanvas(800, 400);
             c.parent('canvas-container');
-            noLoop();
-            background(15, 23, 42); // slate-900
             
-            // Draw 8 panels (4 cols x 2 rows)
-            let panelSize = 200;
-            
+            // Pre-calculate paths
             for (let i = 0; i < 8; i++) {
-                let order = i + 1; // Order 1 to 8
+                let order = orders[i];
+                let N = pow(2, order);
+                let total = N * N;
                 
-                // Calculate panel position
+                paths[i] = [];
+                // Only store necessary points for drawing
+                for (let j = 0; j < total; j++) {
+                    // Optimization: For high orders, we don't need every single pixel for animation
+                    // but let's keep it simple first
+                    paths[i].push(hilbert(j, order));
+                }
+            }
+            background(15, 23, 42); 
+        }
+
+        function draw() {
+            // Partial clear (optional trail effect or full clear)
+            background(15, 23, 42); 
+
+            for (let i = 0; i < 8; i++) {
+                let order = orders[i];
+                let N = pow(2, order);
+                let total = N * N;
+                
+                // Panel Position
                 let col = i % 4;
                 let row = Math.floor(i / 4);
-                
                 let startX = col * panelSize;
                 let startY = row * panelSize;
                 
-                drawHilbert(startX, startY, panelSize, order);
-                
-                // Draw border
-                stroke(51, 65, 85); // slate-700
+                // Drawing Area
+                let margin = panelSize * 0.1;
+                let drawSize = panelSize - margin * 2;
+                let len = drawSize / N;
+
+                // Draw Border & Text
+                stroke(51, 65, 85);
                 strokeWeight(1);
                 noFill();
                 rect(startX, startY, panelSize, panelSize);
                 
-                // Draw label
                 noStroke();
-                fill(148, 163, 184); // slate-400
+                fill(148, 163, 184);
                 textAlign(LEFT, TOP);
                 textSize(12);
                 text(`Order ${order}`, startX + 10, startY + 10);
+
+                // Animation Progress
+                // Adjust speed: Low order = slow step, High order = fast step
+                // Goal: Complete all roughly at same time (~5 seconds = 300 frames)
+                let speed = Math.ceil(total / 300);
+                if (speed < 1) speed = 1;
+                
+                counters[i] += speed;
+                if (counters[i] > total) counters[i] = 0; // Loop
+
+                // Draw Curve
+                noFill();
+                strokeWeight(map(order, 1, 8, 3, 1));
+                
+                // To optimize performance, we draw the full path up to current index
+                beginShape();
+                for (let j = 0; j < counters[i]; j++) {
+                    // Skip points for high orders to maintain FPS
+                    if (order > 6 && j % 2 !== 0 && j !== counters[i]-1) continue;
+                    
+                    let v = paths[i][j];
+                    let px = startX + margin + v.x * len + len/2;
+                    let py = startY + margin + v.y * len + len/2;
+                    
+                    // Gradient Color: Cyan -> Indigo
+                    let progress = j / total;
+                    stroke(
+                        lerp(56, 129, progress),  // R
+                        lerp(189, 140, progress), // G
+                        248                       // B
+                    );
+                    
+                    vertex(px, py);
+                }
+                endShape();
             }
-        }
-        
-        function drawHilbert(xOffset, yOffset, size, order) {
-            let N = pow(2, order);
-            let total = N * N;
-            
-            // Adjust visualization based on order
-            let sw = map(order, 1, 8, 4, 0.5);
-            strokeWeight(sw);
-            
-            // Gradient Color
-            // Low order: Cyan (#38bdf8), High order: Indigo (#818cf8)
-            let r = map(order, 1, 8, 56, 129);
-            let g = map(order, 1, 8, 189, 140);
-            let b = map(order, 1, 8, 248, 248);
-            stroke(r, g, b);
-            noFill();
-            
-            let margin = size * 0.1;
-            let drawSize = size - margin * 2;
-            let len = drawSize / N;
-            
-            beginShape();
-            for (let i = 0; i < total; i++) {
-                let v = hilbert(i, order);
-                let px = xOffset + margin + v.x * len + len/2;
-                let py = yOffset + margin + v.y * len + len/2;
-                vertex(px, py);
-            }
-            endShape();
         }
 
         function hilbert(i, order) {
             let points = [
-                createVector(0, 0),
-                createVector(0, 1),
-                createVector(1, 1),
-                createVector(1, 0)
+                createVector(0, 0), createVector(0, 1),
+                createVector(1, 1), createVector(1, 0)
             ];
-
             let index = i & 3;
             let v = points[index];
-
             for (let j = 1; j < order; j++) {
                 i = i >>> 2;
                 index = i & 3;
                 let len = pow(2, j);
                 if (index == 0) {
-                    let temp = v.x;
-                    v.x = v.y;
-                    v.y = temp;
+                    let temp = v.x; v.x = v.y; v.y = temp;
                 } else if (index == 1) {
                     v.y += len;
                 } else if (index == 2) {
-                    v.x += len;
-                    v.y += len;
+                    v.x += len; v.y += len;
                 } else if (index == 3) {
-                    let temp = len - 1 - v.x;
-                    v.x = len - 1 - v.y;
-                    v.y = temp;
-                    v.x += len;
+                    let temp = len - 1 - v.x; v.x = len - 1 - v.y; v.y = temp; v.x += len;
                 }
             }
             return v;
