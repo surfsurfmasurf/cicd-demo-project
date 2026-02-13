@@ -3,19 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>p5.js Art Gallery - CI/CD Demo</title>
+    <title>Oksu-dong Underpass Gallery - CI/CD Demo</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-            background: #0f172a;
+            background: #000;
             color: white;
             min-height: 100vh;
             padding: 40px 20px;
         }
         .container { max-width: 1000px; margin: 0 auto; }
         header { text-align: center; margin-bottom: 60px; }
-        h1 { font-size: 3rem; margin-bottom: 10px; background: linear-gradient(to right, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h1 { 
+            font-size: 3rem; 
+            margin-bottom: 10px; 
+            text-transform: uppercase;
+            color: #fff;
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px #0ff, 0 0 30px #0ff, 0 0 40px #0ff;
+        }
         p.subtitle { color: #94a3b8; font-size: 1.2rem; }
         
         .gallery {
@@ -39,7 +45,7 @@
         .card:hover {
             transform: translateY(-10px);
             border-color: #38bdf8;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 0 15px #38bdf8, 0 0 30px #38bdf8;
         }
         
         .card-preview {
@@ -85,7 +91,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>p5.js Art Gallery</h1>
+            <h1>Oksu-dong Underpass Gallery</h1>
             <p class="subtitle">CI/CD 파이프라인으로 자동 배포되는 생성 예술 컬렉션</p>
         </header>
 
@@ -100,10 +106,34 @@
                 </div>
             </a>
 
-            <!-- 2. Abstract Flower -->
+            <!-- 2. Cybernetic Stream -->
+            <a href="/generative-code-golf.html" class="card">
+                <div class="card-preview" style="background: #000;">
+                    <img src="https://raw.githubusercontent.com/surfsurfmasurf/cicd-demo-project/main/public/images/cybernetic-stream.png" alt="Cybernetic Stream" onerror="this.onerror=null; this.src='https://placehold.co/600x400/000000/00FF00?text=Cybernetic+Stream';">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Cybernetic Stream</h3>
+                    <p class="card-desc">짧은 GLSL 코드로 구현한 사이버펑크 스타일의 데이터 스트림입니다. (Code Golf)</p>
+                    <span class="badge">Shader Art</span>
+                </div>
+            </a>
+
+            <!-- 3. Warp Core -->
+            <a href="/warp-core.html" class="card">
+                <div class="card-preview" style="background: #000;">
+                    <img src="https://raw.githubusercontent.com/surfsurfmasurf/cicd-demo-project/main/public/images/warp-core.png" alt="Warp Core" onerror="this.onerror=null; this.src='https://placehold.co/600x400/000000/00FFFF?text=Warp+Core';">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Warp Core</h3>
+                    <p class="card-desc">볼류메트릭 렌더링(Volumetric Rendering) 기법을 사용한 워프 코어 시각화입니다.</p>
+                    <span class="badge">Shader Art</span>
+                </div>
+            </a>
+
+            <!-- 4. Abstract Flower -->
             <a href="/abstract-flower.html" class="card">
                 <div class="card-preview">
-                    <img src="images/abstract-flower.jpg" alt="Abstract Flower">
+                    <img src="https://raw.githubusercontent.com/surfsurfmasurf/cicd-demo-project/main/public/images/abstract-flower.jpg" alt="Abstract Flower">
                 </div>
                 <div class="card-content">
                     <h3 class="card-title">Abstract Flower</h3>
@@ -111,8 +141,20 @@
                     <span class="badge">Math Art</span>
                 </div>
             </a>
+            
+             <!-- 5. Hilbert Curve -->
+            <a href="/hilbert-curve.html" class="card">
+                <div class="card-preview">
+                     <img src="https://raw.githubusercontent.com/surfsurfmasurf/cicd-demo-project/main/public/images/hilbert-curve.png" alt="Hilbert Curve">
+                </div>
+                <div class="card-content">
+                    <h3 class="card-title">Hilbert Curve</h3>
+                    <p class="card-desc">재귀적 해상도(Order 1~8) 변화를 한눈에 비교할 수 있는 공간 충전 곡선 시각화입니다.</p>
+                    <span class="badge">Recursive Algo</span>
+                </div>
+            </a>
 
-            <!-- 3. Dynamic Wave -->
+            <!-- 6. Dynamic Wave -->
             <a href="/dynamic-wave.html" class="card">
                 <div class="card-preview" style="background: radial-gradient(circle, #f472b6, #0f172a);">🌊</div>
                 <div class="card-content">
@@ -122,7 +164,7 @@
                 </div>
             </a>
             
-             <!-- 4. Brownian SDF -->
+             <!-- 7. Brownian SDF -->
             <a href="/brownian-sdf.html" class="card">
                 <div class="card-preview" style="background: radial-gradient(circle, #38bdf8, #0f172a);">🧊</div>
                 <div class="card-content">
@@ -132,7 +174,7 @@
                 </div>
             </a>
 
-            <!-- 5. Particle Interaction -->
+            <!-- 8. Particle Interaction -->
             <a href="/animation.html" class="card">
                 <div class="card-preview" style="background: radial-gradient(circle, #fb7185, #0f172a);">✨</div>
                 <div class="card-content">
@@ -141,20 +183,8 @@
                     <span class="badge">Interactive</span>
                 </div>
             </a>
-            
-             <!-- 6. Hilbert Curve -->
-            <a href="/hilbert-curve.html" class="card">
-                <div class="card-preview">
-                     <img src="images/hilbert-curve.png" alt="Hilbert Curve">
-                </div>
-                <div class="card-content">
-                    <h3 class="card-title">Hilbert Curve</h3>
-                    <p class="card-desc">재귀적 해상도(Order 1~8) 변화를 한눈에 비교할 수 있는 공간 충전 곡선 시각화입니다.</p>
-                    <span class="badge">Recursive Algo</span>
-                </div>
-            </a>
 
-            <!-- 7. Generative Waves -->
+            <!-- 9. Generative Waves -->
             <a href="/generative-waves.html" class="card">
                 <div class="card-preview" style="background: radial-gradient(circle, #8b5cf6, #0f172a);">🧬</div>
                 <div class="card-content">
@@ -164,7 +194,7 @@
                 </div>
             </a>
 
-            <!-- 8. Raymarching Shader -->
+            <!-- 10. Raymarching Shader -->
             <a href="/generative-shader.html" class="card">
                 <div class="card-preview" style="background: radial-gradient(circle, #6366f1, #0f172a);">🔮</div>
                 <div class="card-content">
