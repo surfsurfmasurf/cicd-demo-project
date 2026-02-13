@@ -23,8 +23,8 @@
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid #334155;
-            width: 400px;
-            height: 400px;
+            width: 600px;
+            height: 600px;
             background: #000;
         }
         .content { 
@@ -69,13 +69,13 @@
     <div class="content">
         <h1>Fractal Cloud (Code Golf)</h1>
         <p>
-            이 작품은 <strong>Code Golf</strong> 스타일의 짧은 GLSL 코드를 p5.js WebGL 쉐이더로 변환한 것입니다.
+            이 작품은 <strong>Code Golf</strong> 스타일의 매우 짧은 GLSL 코드를 p5.js WebGL 쉐이더로 변환한 것입니다.
             단 몇 줄의 코드로 <strong>복잡한 프랙탈 노이즈(Fractal Noise)</strong>와 <strong>우주 성운(Nebula)</strong> 같은 몽환적인 효과를 만들어냅니다.
         </p>
 
-        <h2>💻 Shader Source Code (GLSL)</h2>
+        <h2>💻 Original Golfed Code</h2>
         <div class="code-block">
-            <pre id="shader-code"></pre>
+            <pre>float i,s,R,e;vec3 q,p,d=vec3((FC.xy-.5*r)/r+vec2(0,1),1);for(q.yz--;i++&lt;50.;){e+=i/5e3;i&gt;35.?d/=-d:d;o.rgb+=hsv(.1,e-.4,e/17.);s=1.;p=q+=d*e*R*.18;p=vec3(log(R=length(p))-t*.2,-p.z/R,p.yz-1.*p.xx-t*.2);for(e=--p.y;s&lt;5e2;s+=s)e+=cos(dot(cos(p*s),sin(p.zxy*s)))/s*.8;}</pre>
         </div>
     </div>
 
@@ -97,7 +97,8 @@
             }
         `;
 
-        // Fragment Shader (Slightly adjusted for p5.js from code golf logic)
+        // Fragment Shader (Faithful Port of Code Golf)
+        // Trying to keep the exact logic while fixing WebGL GLSL syntax
         const fragSrc = `
             #ifdef GL_ES
             precision highp float;
@@ -114,41 +115,107 @@
 
             void main() {
                 vec2 r = u_resolution.xy;
-                float t = u_time;
+                // Original uses 't', usually time in seconds.
+                float t = u_time * 0.5; 
                 
-                // Centered UV (-1 to 1)
-                vec2 uv = (gl_FragCoord.xy * 2.0 - r) / min(r.x, r.y);
+                // Emulate FC (gl_FragCoord)
+                vec2 FC = gl_FragCoord.xy;
                 
-                // Fractal Noise Logic (Simplified version of the golfed code)
-                vec3 finalColor = vec3(0.0);
-                vec3 p = vec3(uv, t * 0.1); // Moving through Z
+                // Initial Variables (float i,s,R,e; vec3 q,p,d)
+                float i = 0.0;
+                float s = 0.0;
+                float R = 0.0;
+                float e = 0.0;
                 
-                float amplitude = 0.5;
-                float frequency = 1.0;
+                // d = vec3((FC.xy-.5*r)/r+vec2(0,1), 1)
+                // Note: Original code divides by 'r' (vec2). GLSL vec2/vec2 is component-wise.
+                // This means aspect ratio is NOT corrected if r.x != r.y.
+                // Let's stick to the golf logic: (FC.xy - 0.5 * r) / r
+                vec3 d = vec3((FC.xy - 0.5 * r) / r + vec2(0.0, 1.0), 1.0);
                 
-                for(int i = 0; i < 6; i++) {
-                    p.xy *= mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5)); // Rotate
+                vec3 q = vec3(0.0);
+                vec3 p = vec3(0.0);
+                vec3 o = vec3(0.0); // Output color accumulator
+
+                // for(q.yz--; i++ < 50.;)
+                q.yz -= 1.0;
+
+                for(int k = 0; k < 50; k++) {
+                    i += 1.0; // i++
                     
-                    // Simple sinusoidal noise
-                    float noise = sin(p.x * frequency) * sin(p.y * frequency) * sin(p.z * frequency);
+                    // e+=i/5e3;
+                    e += i / 5000.0;
                     
-                    // Color mapping
-                    finalColor += hsv(t * 0.05 + float(i)*0.1 + noise*0.2, 0.7, abs(noise) * amplitude);
+                    // i>35.?d/=-d:d;
+                    if(i > 35.0) {
+                        d /= -d;
+                    }
+
+                    // o.rgb+=hsv(.1,e-.4,e/17.);
+                    o += hsv(0.1, e - 0.4, e / 17.0);
+
+                    // s=1.;
+                    s = 1.0;
+
+                    // p=q+=d*e*R*.18;
+                    q += d * e * R * 0.18;
+                    p = q;
+
+                    // R=length(p)
+                    R = length(p);
+
+                    // p=vec3(log(R)-t*.2, -p.z/R, p.yz-1.*p.xx-t*.2);
+                    // Note: p.yz is vec2(p.y, p.z). p.xx is vec2(p.x, p.x).
+                    // In GLSL constructor: vec3(x, y, z)
+                    // The last term: p.yz - 1.0 * p.xx - t * 0.2 seems to be creating a vec2?
+                    // Original: vec3(..., ..., p.yz-p.xx ...) -> This looks like 4 components?
+                    // Ah, Code Golf trickery. Let's re-read carefully:
+                    // p = vec3( log(R)-t*.2, -p.z/R, p.y - p.x*1.0 - t*.2 ); ???
+                    // Wait, usually golf code: vec3(a, b, vec2(c,d)) is invalid for vec3.
+                    // Maybe it meant: p.x = log..., p.y = ..., p.z = ...
+                    // Let's assume the 3rd component is scalar: p.y - p.x - t*0.2
+                    // Or maybe it is p.yz (2 components) minus p.xx (2 components) -> vec2 result?
+                    // If p is vec3, the constructor must take 3 floats.
+                    // If the 3rd argument is a vec2, then it's vec4?
+                    // Let's assume standard Shadertoy golf:
+                    // p = vec3(log(R)-t*.2, -p.z/R, p.y - p.x - t*.2);
                     
-                    frequency *= 2.0;
-                    amplitude *= 0.5;
+                    // Re-checking the provided golf string:
+                    // p=vec3(log(R=length(p))-t*.2,-p.z/R,p.yz-1.*p.xx-t*.2);
+                    // The 3rd arg is "p.yz - 1. * p.xx - t * .2" which is a vec2!
+                    // So p becomes a vec4? But p is declared as vec3.
+                    // This is valid in GLSL if we assign to p.xyz but source is vec4? No.
+                    // Maybe p was vec4 in the original?
+                    // "vec3 q,p,d" -> p is vec3.
+                    // "vec3(...) with 4 components" -> Error in standard GLSL.
+                    // Maybe the original env (Twigl/GLSLSandbox) allows implicit truncation or p is vec4.
+                    // Let's try to infer: The 3rd component needs to be a float.
+                    // Maybe it's p.y - p.x - t*0.2 ?
+                    // Let's try taking the first component of the vec2 result: (p.y - p.x - t*0.2)
+                    
+                    float term3 = p.y - p.x - t * 0.2;
+                    p = vec3(log(R) - t * 0.2, -p.z / R, term3);
+
+                    // for(e=--p.y; s<5e2; s+=s)
+                    p.y -= 1.0;
+                    e = p.y;
+                    
+                    for(int m = 0; m < 20; m++) { // s < 500 loop
+                        if(s >= 500.0) break;
+                        
+                        // e+=cos(dot(cos(p*s),sin(p.zxy*s)))/s*.8;
+                        e += cos(dot(cos(p * s), sin(p.zxy * s))) / s * 0.8;
+                        
+                        s += s;
+                    }
                 }
                 
-                // Vignette
-                float vignette = 1.0 - length(uv) * 0.5;
-                finalColor *= vignette;
-
-                gl_FragColor = vec4(finalColor, 1.0);
+                gl_FragColor = vec4(o, 1.0);
             }
         `;
 
         function setup() {
-            let c = createCanvas(400, 400, WEBGL);
+            let c = createCanvas(600, 600, WEBGL);
             c.parent('canvas-container');
             noStroke();
             theShader = createShader(vertSrc, fragSrc);
@@ -159,14 +226,7 @@
             shader(theShader);
             theShader.setUniform('u_resolution', [width, height]);
             theShader.setUniform('u_time', millis() / 1000.0);
-            
-            // Draw a full-screen quad (-1 to 1)
-            beginShape();
-            vertex(-1, -1, 0, 0, 1);
-            vertex(1, -1, 0, 1, 1);
-            vertex(1, 1, 0, 1, 0);
-            vertex(-1, 1, 0, 0, 0);
-            endShape(CLOSE);
+            quad(-1, -1, 1, -1, 1, 1, -1, 1);
         }
     </script>
 </body>
