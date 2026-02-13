@@ -40,6 +40,7 @@
             color: inherit;
             display: flex;
             flex-direction: column;
+            position: relative;
         }
         
         .card:hover {
@@ -54,15 +55,17 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 3rem;
-            object-fit: cover;
-            width: 100%;
+            overflow: hidden;
+            /* FIX: Ensure image is centered and not cropped weirdly */
+            position: relative;
         }
         
         .card-preview img {
             width: 100%;
             height: 100%;
+            /* FIX: Use 'cover' but center it properly so it doesn't look cut off */
             object-fit: cover;
+            object-position: center;
         }
         
         .card-content { padding: 20px; }
@@ -135,7 +138,7 @@
             <!-- 4. Abstract Flower -->
             <a href="/abstract-flower.html" class="card">
                 <div class="card-preview">
-                    <img src="images/20191201_105955.jpg" alt="Abstract Flower">
+                    <img src="images/abstract-flower.jpg" alt="Abstract Flower">
                 </div>
                 <div class="card-content">
                     <h3 class="card-title">Abstract Flower</h3>
@@ -147,7 +150,7 @@
              <!-- 5. Hilbert Curve -->
             <a href="/hilbert-curve.html" class="card">
                 <div class="card-preview">
-                     <img src="images/20200103_123746.jpg" alt="Hilbert Curve">
+                     <img src="images/hilbert-curve.png" alt="Hilbert Curve">
                 </div>
                 <div class="card-content">
                     <h3 class="card-title">Hilbert Curve</h3>
