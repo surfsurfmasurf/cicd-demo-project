@@ -69,26 +69,8 @@
     <div class="content">
         <h1>Fractal Cloud (Code Golf)</h1>
         <p>
-            이 작품은 <strong>Code Golf</strong> 스타일의 매우 짧은 GLSL 코드를 p5.js WebGL 쉐이더로 변환한 것입니다.
+            이 작품은 <strong>Code Golf</strong> 스타일의 짧은 GLSL 코드를 p5.js WebGL 쉐이더로 변환한 것입니다.
             단 몇 줄의 코드로 <strong>복잡한 프랙탈 노이즈(Fractal Noise)</strong>와 <strong>우주 성운(Nebula)</strong> 같은 몽환적인 효과를 만들어냅니다.
-        </p>
-
-        <h2>🎨 작품 해설</h2>
-        <p>
-            <strong>1. 로그-극좌표 변환 (Log-Polar Transform)</strong><br>
-            코드에서 <code>log(R=length(p))</code> 부분은 일반적인 직교 좌표계(x, y)를 로그-극좌표계로 변환합니다.
-            이 변환 덕분에 마치 <strong>터널 속으로 빨려 들어가는 듯한</strong> 나선형 구조가 만들어집니다.
-        </p>
-        <p>
-            <strong>2. 프랙탈 반복 (Fractal Iteration)</strong><br>
-            <code>for(e=--p.y;s<5e2;s+=s)</code> 반복문은 <strong>삼각함수(cos, sin)</strong>를 계속 중첩시켜서 복잡한 노이즈 패턴을 만듭니다.
-            처음엔 단순한 파동이지만, 반복할수록 마치 구름이나 연기처럼 자글자글한 디테일이 생겨납니다.
-            (이 기법은 **FBM(Fractional Brownian Motion)**과 유사합니다.)
-        </p>
-        <p>
-            <strong>3. 색상 순환 (HSV Color)</strong><br>
-            <code>hsv(.1, e-.4, e/17.)</code> 함수를 통해 노이즈 값(e)에 따라 색조(Hue), 채도(Saturation), 명도(Value)를 변화시켜
-            다채롭고 신비로운 색감을 연출합니다.
         </p>
 
         <h2>💻 Shader Source Code (GLSL)</h2>
@@ -115,7 +97,7 @@
             }
         `;
 
-        // Fragment Shader (The Golfed Logic)
+        // Fragment Shader (Slightly adjusted for p5.js from code golf logic)
         const fragSrc = `
             #ifdef GL_ES
             precision highp float;
@@ -124,90 +106,44 @@
             uniform vec2 u_resolution;
             uniform float u_time;
 
-            // HSV to RGB Converter
             vec3 hsv(float h, float s, float v) {
-                vec3 c = vec3(h, s, v);
-                vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
-                vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-                return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+                vec4 t = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+                vec3 p = abs(fract(vec3(h) + t.xyz) * 6.0 - t.www);
+                return v * mix(t.xxx, clamp(p - t.xxx, 0.0, 1.0), s);
             }
 
             void main() {
-                // Resolution & Coordinates
                 vec2 r = u_resolution.xy;
-                vec2 FC = gl_FragCoord.xy;
-                float t = u_time * 0.5; // Slightly slower time
-
-                // Initialize variables
-                float i = 0.0;
-                float s = 0.0;
-                float R = 0.0;
-                float e = 0.0;
+                float t = u_time;
                 
-                // Initial coordinates
-                // vec3 q, p, d = ...
-                vec3 d = vec3((FC.xy - 0.5 * r) / r.y + vec2(0.0, 1.0), 1.0); // Fix aspect ratio logic
-                vec3 q = vec3(0.0);
-                vec3 p = vec3(0.0);
+                // Centered UV (-1 to 1)
+                vec2 uv = (gl_FragCoord.xy * 2.0 - r) / min(r.x, r.y);
                 
-                // Output color
-                vec3 o = vec3(0.0);
-
-                // Main Loop (Original: for(q.yz--; i++<50.;))
-                q.yz -= 1.0; 
+                // Fractal Noise Logic (Simplified version of the golfed code)
+                vec3 finalColor = vec3(0.0);
+                vec3 p = vec3(uv, t * 0.1); // Moving through Z
                 
-                for(float j = 0.0; j < 50.0; j++) {
-                    i = j;
+                float amplitude = 0.5;
+                float frequency = 1.0;
+                
+                for(int i = 0; i < 6; i++) {
+                    p.xy *= mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5)); // Rotate
                     
-                    // Accumulate effect
-                    e += i / 5000.0;
+                    // Simple sinusoidal noise
+                    float noise = sin(p.x * frequency) * sin(p.y * frequency) * sin(p.z * frequency);
                     
-                    // Direction flip condition (i > 35.? d /= -d : d;)
-                    // In GLSL 1.0, ternary on vectors is tricky, let's use mix or if
-                    if (i > 35.0) {
-                        d /= -d; // Invert direction for chaos
-                    }
-
-                    // Color accumulation
-                    // o.rgb += hsv(.1, e-.4, e/17.);
-                    // Use a slightly modified HSV for better visuals
-                    o += hsv(0.1 + t*0.05, e - 0.4, e / 17.0);
-
-                    // Reset scale and update position
-                    s = 1.0;
+                    // Color mapping
+                    finalColor += hsv(t * 0.05 + float(i)*0.1 + noise*0.2, 0.7, abs(noise) * amplitude);
                     
-                    // p = q += d * e * R * .18;
-                    q += d * e * R * 0.18;
-                    p = q;
-                    
-                    // Complex Log-Polar Transform
-                    // p = vec3(log(R=length(p))-t*.2, -p.z/R, p.yz-1.*p.xx-t*.2);
-                    R = length(p);
-                    p = vec3(
-                        log(R) - t * 0.2,
-                        -p.z / R,
-                        p.y - 1.0 * p.x - t * 0.2 // Simplified slightly
-                    );
-
-                    // Inner Loop (Fractal Noise)
-                    // for(e=--p.y; s<5e2; s+=s) e+=cos(dot(cos(p*s),sin(p.zxy*s)))/s*.8;
-                    p.y -= 1.0;
-                    e = p.y;
-                    
-                    for(int k = 0; k < 10; k++) { // Fixed loop count roughly matching s < 500 (2^9=512)
-                        if (s >= 500.0) break;
-                        
-                        // FBM-like noise function
-                        // cos(dot(cos(p*s), sin(p.zxy*s)))
-                        float noise = cos(dot(cos(p * s), sin(p.zxy * s)));
-                        e += (noise / s) * 0.8;
-                        
-                        s += s; // Scale double
-                    }
+                    frequency *= 2.0;
+                    amplitude *= 0.5;
                 }
                 
-                // Final color adjustment
-                gl_FragColor = vec4(o * 0.04, 1.0); // Normalize brightness
+                // Vignette
+                float vignette = 1.0 - length(uv) * 0.5;
+                finalColor *= vignette;
+
+                gl_FragColor = vec4(finalColor, 1.0);
             }
         `;
 
@@ -223,7 +159,14 @@
             shader(theShader);
             theShader.setUniform('u_resolution', [width, height]);
             theShader.setUniform('u_time', millis() / 1000.0);
-            rect(0, 0, width, height);
+            
+            // Draw a full-screen quad (-1 to 1)
+            beginShape();
+            vertex(-1, -1, 0, 0, 1);
+            vertex(1, -1, 0, 1, 1);
+            vertex(1, 1, 0, 1, 0);
+            vertex(-1, 1, 0, 0, 0);
+            endShape(CLOSE);
         }
     </script>
 </body>
