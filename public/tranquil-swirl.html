@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tranquil Swirl - p5.js Art</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+        #canvas-container { 
+            margin-top: 40px; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2); 
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            width: 400px;
+            height: 400px;
+        }
+        .content { 
+            max-width: 900px; 
+            width: 90%; 
+            margin: 40px 0; 
+            padding: 30px; 
+            background: #1e293b; 
+            border-radius: 16px; 
+            border: 1px solid #334155;
+        }
+        h1 { 
+            color: #38bdf8; 
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+        h2 {
+            color: #94a3b8;
+            font-size: 1.2rem;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 10px;
+        }
+        p {
+            line-height: 1.7;
+            color: #cbd5e1;
+            margin-bottom: 15px;
+        }
+        .code-block { 
+            background: #0f172a; 
+            padding: 20px; 
+            border-radius: 8px; 
+            overflow-x: auto; 
+            border: 1px solid #334155;
+            position: relative;
+        }
+        pre { 
+            margin: 0;
+            font-family: 'Consolas', monospace; 
+            font-size: 14px; 
+            color: #a5b4fc;
+            line-height: 1.5;
+        }
+        .explanation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        @media (max-width: 768px) {
+            .explanation-grid { grid-template-columns: 1fr; }
+        }
+        .highlight { color: #f472b6; font-weight: bold; }
+        .back-link { 
+            margin: 30px 0 60px; 
+            color: #64748b; 
+            text-decoration: none; 
+            transition: color 0.3s; 
+            font-weight: 600;
+        }
+        .back-link:hover { color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    
+    <div class="content">
+        <h1>Tranquil Swirl</h1>
+        <p>Code Golf 스타일의 짧은 코드로 구현한, 끊임없이 변화하는 소용돌이 패턴입니다.</p>
+        
+        <div class="explanation-grid">
+            <div>
+                <h2>🎨 작품 해설</h2>
+                <p>
+                    이 작품은 수만 개의 점들이 수학적 함수에 의해 춤을 추듯 움직이며 형상을 만들어냅니다.
+                    삼각함수(sin, cos)의 중첩과 시간 변수(t)의 변화가 결합되어, 마치 살아있는 유기체나 은하계의 소용돌이 같은 패턴을 생성합니다.
+                </p>
+                <p>
+                    매 프레임마다 20,000개의 점을 다시 그리며, 배경을 지우고 다시 그리는 과정을 통해 애니메이션 효과를 만들어냅니다.
+                    Code Golf(코드 골프) 기법을 사용하여 극한으로 압축된 수식으로 복잡한 시각적 효과를 구현했습니다.
+                </p>
+            </div>
+            <div>
+                <h2>⚙️ 코드 분석</h2>
+                <ul style="padding-left: 20px; line-height: 1.8; color: #cbd5e1;">
+                    <li><strong>초압축 수식:</strong>
+                        <br><code>d=mag(...)**2/79+1</code>
+                        <br>점들의 거리와 분포를 결정하는 핵심 공식입니다.
+                    </li>
+                    <li><strong>운동성 (Motion):</strong>
+                        <br><code>sin(d*d+e/9-t)</code>
+                        <br>시간 <code>t</code>가 흐름에 따라 파동이 퍼져나가는 듯한 움직임을 만듭니다.
+                    </li>
+                    <li><strong>극좌표 변환:</strong>
+                        <br><code>point((q...)*sin(c)+200, (q...)*cos(c)+200)</code>
+                        <br>계산된 값을 극좌표계(반지름과 각도)로 변환하여 원형의 소용돌이 형태를 구축합니다.
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <h2>💻 Source Code (Original Golf)</h2>
+        <div class="code-block">
+            <pre>
+a=(y,d=mag(k=9*cos(y*2),e=y/8-12)**2/79+1)=>point((q=79-e*sin(k)+k/d*(8+4*sin(sin(d*d+e/9-t))))*sin(c=d/2-cos(d*2)/5-t/16+i%2*3)+200,(q+40)*cos(c)+200)
+t=0,draw=$=>{t||createCanvas(w=400,w);background(9).stroke(w,96);for(t+=PI/45,i=2e4;i--;)a(i/99)}
+            </pre>
+        </div>
+    </div>
+
+    <a href="/" class="back-link">← 갤러리로 돌아가기</a>
+
+    <script>
+        let t = 0;
+        let w = 400;
+
+        function setup() {
+            let c = createCanvas(w, w);
+            c.parent('canvas-container');
+            background(9);
+            stroke(255, 96);
+        }
+
+        function draw() {
+            background(9);
+            stroke(255, 96);
+            
+            t += PI / 45;
+            
+            // Re-implementing the golf logic in a slightly safer scope
+            const a = (y, i_val) => {
+                // k=9*cos(y*2)
+                let k = 9 * cos(y * 2);
+                
+                // e=y/8-12
+                let e = y / 8 - 12;
+                
+                // d=mag(k, e)**2/79+1
+                // mag(k, e) is sqrt(k*k + e*e)
+                let d = (k*k + e*e) / 79 + 1; 
+
+                // q=79-e*sin(k)+k/d*(8+4*sin(sin(d*d+e/9-t)))
+                let q = 79 - e * sin(k) + k / d * (8 + 4 * sin(sin(d * d + e / 9 - t)));
+                
+                // c=d/2-cos(d*2)/5-t/16+i%2*3
+                // Use i_val passed from loop
+                let c = d / 2 - cos(d * 2) / 5 - t / 16 + (i_val % 2) * 3;
+                
+                // point mapping
+                // x = (q) * sin(c) + 200 -> Original had (q...) * sin(c)
+                // y = (q+40) * cos(c) + 200
+                
+                point(
+                    q * sin(c) + 200,
+                    (q + 40) * cos(c) + 200
+                );
+            };
+
+            for (let i = 2e4; i--; ) {
+                a(i / 99, i);
+            }
+        }
+    </script>
+</body>
+</html>
