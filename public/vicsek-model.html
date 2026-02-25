@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vicsek Model Simulation - p5.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+        #canvas-container { 
+            margin-top: 20px; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); 
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            width: 100%;
+            max-width: 600px;
+            aspect-ratio: 1;
+        }
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        .controls {
+            width: 90%;
+            max-width: 600px;
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: grid;
+            gap: 15px;
+            border: 1px solid #334155;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 5px;
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: #38bdf8;
+        }
+        .content { 
+            max-width: 800px; 
+            width: 90%; 
+            margin: 40px 0; 
+            padding: 30px; 
+            background: #1e293b; 
+            border-radius: 16px; 
+            border: 1px solid #334155;
+        }
+        h1 { color: #38bdf8; font-size: 2rem; margin-bottom: 10px; }
+        h2 { color: #cbd5e1; font-size: 1.4rem; margin-top: 30px; border-bottom: 1px solid #334155; padding-bottom: 10px;}
+        p, li { line-height: 1.7; color: #cbd5e1; }
+        .math { 
+            background: #0f172a; 
+            padding: 15px; 
+            border-radius: 8px; 
+            font-family: 'Times New Roman', serif; 
+            font-style: italic; 
+            text-align: center;
+            font-size: 1.2rem;
+            margin: 20px 0;
+            border: 1px solid #334155;
+        }
+        .back-link { 
+            margin: 30px 0 60px; 
+            color: #64748b; 
+            text-decoration: none; 
+            font-weight: 600;
+        }
+        .back-link:hover { color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <h1>Vicsek Model</h1>
+    <div id="canvas-container"></div>
+    
+    <div class="controls">
+        <div class="control-group">
+            <div class="control-header">
+                <span>Particle Count (N)</span>
+                <span id="val-n">300</span>
+            </div>
+            <input type="range" id="input-n" min="50" max="1000" step="10" value="300">
+        </div>
+        <div class="control-group">
+            <div class="control-header">
+                <span>Alignment Radius (r)</span>
+                <span id="val-r">25</span>
+            </div>
+            <input type="range" id="input-r" min="5" max="100" step="1" value="25">
+        </div>
+        <div class="control-group">
+            <div class="control-header">
+                <span>Noise (η)</span>
+                <span id="val-eta">0.3</span>
+            </div>
+            <input type="range" id="input-eta" min="0" max="2" step="0.05" value="0.3">
+        </div>
+        <div class="control-group">
+            <div class="control-header">
+                <span>Speed (v)</span>
+                <span id="val-v">2.0</span>
+            </div>
+            <input type="range" id="input-v" min="0.5" max="5" step="0.1" value="2.0">
+        </div>
+    </div>
+
+    <div class="content">
+        <h2>🔬 Vicsek Model 이란?</h2>
+        <p>
+            Vicsek Model(빅섹 모델)은 1995년 Tamás Vicsek 등이 제안한 <strong>자기 추진 입자(Self-Propelled Particles)</strong>의 집단 운동 모델입니다.
+            새 떼, 물고기 떼, 박테리아 군집 등의 <strong>집단 행동(Collective Motion)</strong>을 설명하는 가장 단순하면서도 강력한 물리학 모델 중 하나입니다.
+        </p>
+
+        <div class="math">
+            θ(t+1) = ⟨θ(t)⟩r + Δη
+        </div>
+
+        <p>각 입자는 다음 규칙에 따라 움직입니다:</p>
+        <ul>
+            <li>모든 입자는 일정한 속력 <strong>v</strong>로 움직입니다.</li>
+            <li>자신의 진행 방향 <strong>θ(t+1)</strong>을 결정할 때, 반경 <strong>r</strong> 내에 있는 이웃 입자들의 평균 방향 <strong>⟨θ(t)⟩</strong>을 따르려 합니다. (정렬)</li>
+            <li>여기에 무작위 노이즈 <strong>Δη</strong>가 추가됩니다. (불확실성)</li>
+        </ul>
+
+        <h2>🎛️ 시뮬레이션 조작</h2>
+        <p>위의 슬라이더를 통해 실시간으로 파라미터를 조정해보세요:</p>
+        <ul>
+            <li><strong>N (Count):</strong> 입자의 개수입니다. 밀도가 높을수록 정렬이 잘 일어납니다.</li>
+            <li><strong>r (Radius):</strong> 이웃을 인식하는 범위입니다. 범위가 넓을수록 멀리 있는 입자의 영향을 받습니다.</li>
+            <li><strong>η (Noise):</strong> 무질서도입니다. 노이즈가 크면 제각각 움직이고, 작으면 빠르게 한 방향으로 정렬됩니다.</li>
+            <li><strong>v (Speed):</strong> 입자의 이동 속도입니다.</li>
+        </ul>
+        <p>
+            이 단순한 규칙만으로도 무질서한 상태에서 질서 있는 상태(Phase Transition)로의 전이를 관찰할 수 있습니다.
+        </p>
+    </div>
+
+    <a href="/" class="back-link">← 갤러리로 돌아가기</a>
+
+    <script>
+        let particles = [];
+        let N = 300;
+        let R = 25;
+        let eta = 0.3;
+        let v = 2.0;
+        let widthVal = 600;
+        let heightVal = 600;
+
+        // Elements
+        const sliderN = document.getElementById('input-n');
+        const sliderR = document.getElementById('input-r');
+        const sliderEta = document.getElementById('input-eta');
+        const sliderV = document.getElementById('input-v');
+
+        const valN = document.getElementById('val-n');
+        const valR = document.getElementById('val-r');
+        const valEta = document.getElementById('val-eta');
+        const valV = document.getElementById('val-v');
+
+        function setup() {
+            let container = document.getElementById('canvas-container');
+            // Responsive canvas size
+            let size = Math.min(container.offsetWidth, 600);
+            widthVal = size;
+            heightVal = size;
+
+            let c = createCanvas(widthVal, heightVal);
+            c.parent('canvas-container');
+            
+            initParticles();
+            
+            // UI Listeners
+            sliderN.addEventListener('input', (e) => {
+                N = parseInt(e.target.value);
+                valN.innerText = N;
+                // Add or remove particles
+                if (particles.length < N) {
+                    for (let i = particles.length; i < N; i++) {
+                        particles.push(new Particle(random(width), random(height)));
+                    }
+                } else {
+                    particles = particles.slice(0, N);
+                }
+            });
+
+            sliderR.addEventListener('input', (e) => {
+                R = parseInt(e.target.value);
+                valR.innerText = R;
+            });
+
+            sliderEta.addEventListener('input', (e) => {
+                eta = parseFloat(e.target.value);
+                valEta.innerText = eta;
+            });
+
+            sliderV.addEventListener('input', (e) => {
+                v = parseFloat(e.target.value);
+                valV.innerText = v;
+            });
+        }
+        
+        function windowResized() {
+             let container = document.getElementById('canvas-container');
+             let size = Math.min(container.offsetWidth, 600);
+             resizeCanvas(size, size);
+             widthVal = size;
+             heightVal = size;
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < N; i++) {
+                particles.push(new Particle(random(widthVal), random(heightVal)));
+            }
+        }
+
+        function draw() {
+            background(15, 23, 42, 200); // Slight trail
+            
+            // Calculate new angles based on neighbors
+            // To avoid sequential update bias, calculate all first, then update
+            let newAngles = [];
+
+            for (let i = 0; i < particles.length; i++) {
+                let p = particles[i];
+                let sumSin = 0;
+                let sumCos = 0;
+                let count = 0;
+
+                for (let j = 0; j < particles.length; j++) {
+                    let other = particles[j];
+                    // Periodic boundary distance
+                    let dx = abs(p.x - other.x);
+                    let dy = abs(p.y - other.y);
+                    if (dx > width/2) dx = width - dx;
+                    if (dy > height/2) dy = height - dy;
+                    
+                    let distSq = dx*dx + dy*dy;
+                    
+                    if (distSq < R*R) {
+                        sumSin += sin(other.angle);
+                        sumCos += cos(other.angle);
+                        count++;
+                    }
+                }
+
+                let avgAngle = atan2(sumSin, sumCos);
+                // Add noise (-eta/2 to +eta/2)
+                let noise = random(-eta/2, eta/2);
+                newAngles[i] = avgAngle + noise;
+            }
+
+            // Update and draw
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].angle = newAngles[i];
+                particles[i].update();
+                particles[i].show();
+            }
+        }
+
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.angle = random(TWO_PI);
+            }
+
+            update() {
+                this.x += cos(this.angle) * v;
+                this.y += sin(this.angle) * v;
+
+                // Periodic boundary
+                if (this.x < 0) this.x += width;
+                if (this.x > width) this.x -= width;
+                if (this.y < 0) this.y += height;
+                if (this.y > height) this.y -= height;
+            }
+
+            show() {
+                // Color based on angle
+                let hue = map(this.angle % TWO_PI, 0, TWO_PI, 0, 360);
+                colorMode(HSB);
+                stroke(hue, 80, 100);
+                strokeWeight(3);
+                point(this.x, this.y);
+                
+                // Draw velocity vector (tail)
+                strokeWeight(1);
+                stroke(hue, 80, 100, 0.5);
+                line(this.x, this.y, this.x - cos(this.angle)*5, this.y - sin(this.angle)*5);
+                colorMode(RGB);
+            }
+        }
+    </script>
+</body>
+</html>
