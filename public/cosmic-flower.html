@@ -160,7 +160,7 @@
                 vec3 v = normalize(vec3(uv.x, -uv.y, 1.5)); // FOV 조절용 z=1.5
                 
                 // Zoom all: 화면에 꽉 차도록 전체 형태가 보이게 Z축 거리 설정
-                p.z += 3.8; 
+                p.z += 1.8; 
 
                 
                 float d = 0.0, i = 0.0, l = 0.0, z = 0.0;
@@ -178,13 +178,13 @@
                     }
                     
                     if (l > 50.0) {
-                        v /= v;
+                        v /= (v + 0.0001); // avoid division by zero
                         d += 0.001;
                         z += d;
                         o *= exp(d / z * 0.4 - 0.1);
                     } else {
                         o += exp(-d) / 20.0;
-                        p += (v / length(v)) * d;
+                        p += (v / (length(v) + 0.0001)) * d; // avoid division by zero
                     }
                 }
                 
