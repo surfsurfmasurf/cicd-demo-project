@@ -85,12 +85,35 @@
         <h1>Cosmic Flower Shader</h1>
         <p>요청하신 GLSL 코드를 <strong>p5.js WebGL Shader</strong>로 변환하여 렌더링한 생성 예술입니다.</p>
         
-        <h2>🎨 작품 해설</h2>
+        <h2>🎨 작품 해설 (Shader Explanation)</h2>
         <p>
-            초소형 코드로 작성된 이 쉐이더는 광선 투사(Raymarching)와 복잡한 벡터 연산(Cross/Dot product)을 활용하여
+            초소형 코드로 작성된 이 쉐이더는 <strong>Raymarching(광선 투사)</strong>과 복잡한 벡터 연산(Cross/Dot product)을 활용하여
             입체적이고 만화경 같은 우주의 꽃 패턴을 만들어냅니다.
             코드 골프(Code Golf) 스타일로 짜여진 원본을 WebGL 호환 구조로 확장하여 적용했습니다.
         </p>
+        
+        <h3>📐 수학적 원리와 코드 구성</h3>
+        <ul>
+            <li>
+                <strong>Raymarching과 공간 (Space & Rays):</strong><br>
+                <code>uv</code> 좌표계를 화면 중앙 <code>(0,0)</code>부터 <code>-1.0 ~ 1.0</code> 범위로 정규화하고 화면 비율에 맞춥니다 (<code>min(r.x, r.y)</code>). 
+                광선(ray)의 시작점 <code>p.z = 3.8</code>에서 출발해 <code>v</code> 방향으로 투사하며 기하학(SDF: Signed Distance Field)과의 거리를 계산합니다.
+            </li>
+            <li>
+                <strong>만화경 형태 생성 (Fractal Folding):</strong><br>
+                내부 8번의 반복문 안에서 <code>dot()</code> 내적 연산과 <code>cross()</code> 외적 연산을 통해 벡터 공간을 반복적으로 회전시키고 구부립니다 (Space Folding). 
+                <code>abs()</code>를 통해 거울처럼 대칭을 만들어 꽃 모양의 프랙탈 구조가 생성됩니다.
+            </li>
+            <li>
+                <strong>p5.js WebGL 통합 (Implementation):</strong><br>
+                p5.js의 <code>createShader()</code>를 이용해 화면 크기만큼 <code>rect()</code> 영역을 그리고, 그 위에 프래그먼트 쉐이더(Fragment Shader) 픽셀 단위로 직접 계산된 색상을 칠하는 방식입니다.
+            </li>
+            <li>
+                <strong>선명한 네온 컬러링 (Vivid Neon Coloring):</strong><br>
+                단순히 거리를 빛으로 누적하던 기존의 탁한 색상을 제거하고, <code>smoothstep()</code> 함수를 사용하여 일정 기준 이상의 빛 데이터만 강하게 추출했습니다.
+                여기에 <code>cos()</code> 기반의 팔레트 함수를 곱해 채도가 높은 역동적인 네온 광원 효과를 구현했습니다.
+            </li>
+        </ul>
 
         <h2>💻 Shader Source Code</h2>
         <div class="code-block">
@@ -131,10 +154,13 @@
 
                 vec3 q;
                 vec3 p = vec3(0.0);
-                vec2 uv = gl_FragCoord.xy / r.xy;
-                vec3 v = vec3(FC.x * 2.0 - r.x, FC.y * 2.0 - r.y, r.x);
-                v.y = -v.y; // Y축 방향 뒤집어 중앙 고정
-                p.z += 1.5; // 더 많이 Zoom in (2.5 -> 1.5)
+                
+                // 완벽한 중앙 정렬을 위해 UV를 -1.0 ~ 1.0 범위로 정규화 (Y축 반전)
+                vec2 uv = (FC.xy * 2.0 - r.xy) / min(r.x, r.y);
+                vec3 v = normalize(vec3(uv.x, -uv.y, 1.5)); // FOV 조절용 z=1.5
+                
+                // Zoom all: 화면에 꽉 차도록 전체 형태가 보이게 Z축 거리 설정
+                p.z += 3.8; 
 
                 
                 float d = 0.0, i = 0.0, l = 0.0, z = 0.0;
@@ -162,12 +188,18 @@
                     }
                 }
                 
-                vec3 brightColor = o.rgb;
-                // 네온 효과: 시간에 따라 사이버펑크 네온 색상으로 변환
-                vec3 neon = 0.5 + 0.5 * cos(u_time + uv.xyx + vec3(0, 2, 4));
-                brightColor = brightColor * neon * 3.0 + vec3(0.1); 
+                // 선명한 네온 컬러 매핑 (흐리멍텅함 제거)
+                float intensity = length(o.rgb);
                 
-                gl_FragColor = vec4(brightColor, 1.0);
+                // 시간에 따른 동적이고 선명한 색상 팔레트 (iq palette style)
+                vec3 neon = 0.5 + 0.5 * cos(u_time * 0.5 + length(uv) + vec3(0.0, 1.0, 2.0));
+                
+                // 대비 증폭: 일정 수준 이상의 빛만 선명하게 추출하고 찌그러진 색을 방지
+                vec3 finalColor = neon * smoothstep(0.1, 0.6, intensity) * 1.5;
+                // 코어 중심부의 밝은 빛 추가
+                finalColor += vec3(1.0) * pow(intensity, 3.0) * 0.5; 
+                
+                gl_FragColor = vec4(finalColor, 1.0);
             }
         `;
 
