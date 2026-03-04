@@ -219,7 +219,7 @@
                     }
                     
                     if (l > 50.0) {
-                        v /= (v + 0.0001); // avoid division by zero
+                        v /= (v + vec3(0.0001)); // avoid division by zero
                         d += 0.001;
                         z += d;
                         o *= exp(d / z * 0.4 - 0.1);
