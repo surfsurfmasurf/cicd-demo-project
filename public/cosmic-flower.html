@@ -17,8 +17,35 @@
             align-items: center; 
             min-height: 100vh; 
         }
+        .controls {
+            margin-top: 20px;
+            background: #1e293b;
+            padding: 15px 25px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+            display: flex;
+            gap: 30px;
+            width: 400px;
+            box-sizing: border-box;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+        .control-group label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+        }
+        .control-group input[type="range"] {
+            width: 100%;
+            accent-color: #38bdf8;
+        }
         #canvas-container { 
-            margin-top: 40px; 
+            margin-top: 20px; 
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2); 
             border-radius: 12px;
             overflow: hidden;
@@ -81,6 +108,17 @@
 <body>
     <div id="canvas-container"></div>
     
+    <div class="controls">
+        <div class="control-group">
+            <label for="zoom-slider"><span>Zoom</span> <span id="zoom-val">3.5</span></label>
+            <input type="range" id="zoom-slider" min="1.0" max="8.0" step="0.1" value="3.5">
+        </div>
+        <div class="control-group">
+            <label for="bright-slider"><span>Brightness</span> <span id="bright-val">2.5</span></label>
+            <input type="range" id="bright-slider" min="0.5" max="5.0" step="0.1" value="2.5">
+        </div>
+    </div>
+    
     <div class="content">
         <h1>Cosmic Flower Shader</h1>
         <p>요청하신 GLSL 코드를 <strong>p5.js WebGL Shader</strong>로 변환하여 렌더링한 생성 예술입니다.</p>
@@ -125,6 +163,7 @@
 
     <script>
         let theShader;
+        let zoomSlider, brightSlider;
 
         const vertSrc = `
             attribute vec3 aPosition;
@@ -145,6 +184,8 @@
 
             uniform vec2 u_resolution;
             uniform float u_time;
+            uniform float u_zoom;
+            uniform float u_brightness;
 
             void main() {
                 vec4 FC = gl_FragCoord;
@@ -160,7 +201,7 @@
                 vec3 v = normalize(vec3(uv.x, -uv.y, 1.5)); // FOV 조절용 z=1.5
                 
                 // Zoom all: 화면에 꽉 차도록 전체 형태가 보이게 Z축 거리 설정
-                p.z += 1.8; 
+                p.z += u_zoom; 
 
                 
                 float d = 0.0, i = 0.0, l = 0.0, z = 0.0;
@@ -195,9 +236,9 @@
                 vec3 neon = 0.5 + 0.5 * cos(u_time * 0.5 + length(uv) + vec3(0.0, 1.0, 2.0));
                 
                 // 대비 증폭: 일정 수준 이상의 빛만 선명하게 추출하고 찌그러진 색을 방지
-                vec3 finalColor = neon * smoothstep(0.1, 0.6, intensity) * 1.5;
-                // 코어 중심부의 밝은 빛 추가
-                finalColor += vec3(1.0) * pow(intensity, 3.0) * 0.5; 
+                vec3 finalColor = neon * smoothstep(0.1, 0.6, intensity) * u_brightness;
+                // 코어 중심부의 밝은 빛(흰색 코어) 추가
+                finalColor += vec3(1.0) * pow(intensity, 3.0) * (u_brightness * 0.4); 
                 
                 gl_FragColor = vec4(finalColor, 1.0);
             }
@@ -210,6 +251,12 @@
             
             theShader = createShader(vertSrc, fragSrc);
             
+            zoomSlider = document.getElementById('zoom-slider');
+            brightSlider = document.getElementById('bright-slider');
+            
+            zoomSlider.addEventListener('input', (e) => document.getElementById('zoom-val').innerText = e.target.value);
+            brightSlider.addEventListener('input', (e) => document.getElementById('bright-val').innerText = e.target.value);
+
             const originalGolfCode = "vec3 q,p,v=FC.rgb*2.-r.xyx;p.z+=5.;for(float d,i,l,z;l++<1e2;l>5e1?v/=v,z+=d+=.001,o*=exp(d/z*.4-.1):o+=exp(-d)/2e1,p+=v/length(v)*d)for(i=d=9.;i-->1.;)d=min(d,.5*length(max(q=abs(dot(q=normalize(cos(i*.2+t+vec3(0,2,4))),p)*q+cross(q,p)),q.yzx)-.2*i)-.03);";
             document.getElementById('shader-code').textContent = originalGolfCode;
         }
@@ -218,6 +265,8 @@
             shader(theShader);
             theShader.setUniform('u_resolution', [width, height]);
             theShader.setUniform('u_time', millis() / 1000.0);
+            theShader.setUniform('u_zoom', parseFloat(zoomSlider.value));
+            theShader.setUniform('u_brightness', parseFloat(brightSlider.value));
             rect(-width/2, -height/2, width, height);
         }
     </script>
