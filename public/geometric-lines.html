@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometric Lines - p5.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: #0f172a; 
+            color: #e2e8f0; 
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+        #canvas-container { 
+            margin-top: 40px; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2); 
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #334155;
+            width: 400px;
+            height: 400px;
+            background: #000;
+        }
+        .content { 
+            max-width: 900px; 
+            width: 90%; 
+            margin: 40px 0; 
+            padding: 30px; 
+            background: #1e293b; 
+            border-radius: 16px; 
+            border: 1px solid #334155;
+        }
+        h1 { color: #38bdf8; margin-bottom: 10px; font-size: 2rem; }
+        p { line-height: 1.7; color: #cbd5e1; margin-bottom: 15px; }
+        .back-link { margin: 30px 0 60px; color: #64748b; text-decoration: none; font-weight: 600; }
+        .back-link:hover { color: #38bdf8; }
+        .code-block { 
+            background: #0f172a; 
+            padding: 20px; 
+            border-radius: 8px; 
+            overflow-x: auto; 
+            border: 1px solid #334155;
+            font-family: 'Consolas', monospace; 
+            color: #a5b4fc;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div class="content">
+        <h1>Geometric Lines</h1>
+        <p>요청하신 수식을 p5.js로 구현한 기하학 아트입니다.</p>
+        <div class="code-block">line(n*sin(r*t),n*cos(r*t),(400-n)*sin(r),(400-n)*cos(r))</div>
+    </div>
+    <a href="/" class="back-link">← 갤러리로 돌아가기</a>
+    <script>
+        let t = 0;
+        function setup() {
+            let c = createCanvas(400, 400);
+            c.parent('canvas-container');
+            background(0);
+        }
+
+        function draw() {
+            background(15, 23, 42, 30); // Trail effect
+            translate(width / 2, height / 2); // Center origin
+            
+            t += 0.005; // Time variable
+            
+            // Draw lines
+            for(let n = 0; n < 400; n += 5) {
+                let r = n * 0.1; 
+                
+                let hueR = 128 + 127 * sin(t * 2 + n * 0.02);
+                let hueG = 128 + 127 * sin(t * 3 + n * 0.03);
+                let hueB = 255;
+                
+                stroke(hueR, hueG, hueB, 150);
+                strokeWeight(1);
+                
+                // Requested core formula
+                line(n*sin(r*t), n*cos(r*t), (400-n)*sin(r), (400-n)*cos(r));
+            }
+        }
+    </script>
+</body>
+</html>
